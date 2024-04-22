@@ -1,4 +1,4 @@
-package com.github.ryand6.sudokuCore;
+package com.github.ryand6.sudokuGenerator;
 
 import java.util.HashMap;
 

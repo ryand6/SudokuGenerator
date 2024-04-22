@@ -1,4 +1,4 @@
-package com.github.ryand6.sudokuCore;
+package com.github.ryand6.sudokuGenerator;
 
 public class SudokuCore {
     public static void main(String[] args) {
