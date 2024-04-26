@@ -39,6 +39,63 @@ public interface SudokuUtils {
         return true;
     }
 
+    default boolean validateGrid(int[][] grid) {
+        // Confirm rows and columns
+        for (int i = 0; i < 9; i++) {
+            if (!isValidArray(grid[i]) || !isValidArray(getColumn(grid, i))) {
+                return false;
+            }
+        }
+
+        // Confirm blocks
+        for (int bRow = 0; bRow < 3; bRow++) {
+            for (int bCol = 0; bCol < 3; bCol++) {
+                if (!validateBlock(grid, bRow * 3, bCol * 3)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private boolean validateBlock(int[][] grid, int row, int col) {
+        // Store presence of cell values in array
+        boolean[] blockNums = new boolean[9];
+
+        for (int p = 0; p < 3; p++) {
+            for (int q = 0; q < 3; q++) {
+                int num = grid[row + p][col + q];
+                // Check if number is repeated in block
+                if (blockNums[num]) {
+                    return false;
+                }
+                blockNums[num] = true;
+                }
+            }
+        return true;
+    }
+
+    private boolean isValidArray(int[] array) {
+        boolean[] presence = new boolean[9];
+
+        for (int num : array) {
+            if (presence[num]) {
+                return false;
+            }
+            presence[num] = true;
+        }
+        return true;
+    }
+
+    private int[] getColumn(int[][] grid, int colIndex) {
+        int[] column = new int[9];
+        for (int i = 0; i < 9; i++) {
+            column[i] = grid[i][colIndex];
+        }
+        return column;
+    }
+
 
     default void printGrid(int[][] grid) {
         System.out.println(Arrays.deepToString(grid).replace("], ", "]\n"));
