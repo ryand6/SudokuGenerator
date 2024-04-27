@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
-public class GridGenerator implements SudokuUtils {
+public class GridGenerator implements SudokuValidation, SudokuPrinter {
 
     private int[][] grid;
     private final List<Integer> rowIndices;
@@ -58,6 +58,10 @@ public class GridGenerator implements SudokuUtils {
             }
         }
         count += 1;
+    }
+
+    public int[][] getGrid() {
+        return this.grid;
     }
 
     public static void main(String[] args) {

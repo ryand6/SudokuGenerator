@@ -2,7 +2,7 @@ package com.github.ryand6.sudokuGenerator;
 
 import java.util.Random;
 
-public class SudokuBacktracker implements SudokuUtils {
+public class SudokuBacktracker implements SudokuValidation, SudokuPrinter {
 
     private int[][] grid;
     private int count;

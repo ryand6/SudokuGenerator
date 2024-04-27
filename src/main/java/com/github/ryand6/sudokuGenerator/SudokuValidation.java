@@ -1,8 +1,6 @@
 package com.github.ryand6.sudokuGenerator;
 
-import java.util.Arrays;
-
-public interface SudokuUtils {
+public interface SudokuValidation {
 
     /*
     Check that the value in the cell doesn't violate Sudoku rules
@@ -61,11 +59,15 @@ public interface SudokuUtils {
 
     private boolean validateBlock(int[][] grid, int row, int col) {
         // Store presence of cell values in array
-        boolean[] blockNums = new boolean[9];
+        boolean[] blockNums = new boolean[10];
 
         for (int p = 0; p < 3; p++) {
             for (int q = 0; q < 3; q++) {
                 int num = grid[row + p][col + q];
+                // Completed board should not contain 0 as this represents empty cell
+                if (num == 0) {
+                    return false;
+                }
                 // Check if number is repeated in block
                 if (blockNums[num]) {
                     return false;
@@ -77,9 +79,13 @@ public interface SudokuUtils {
     }
 
     private boolean isValidArray(int[] array) {
-        boolean[] presence = new boolean[9];
+        boolean[] presence = new boolean[10];
 
         for (int num : array) {
+            // Completed board should not contain 0 as this represents empty cell
+            if (num == 0) {
+                 return false;
+            }
             if (presence[num]) {
                 return false;
             }
@@ -94,11 +100,6 @@ public interface SudokuUtils {
             column[i] = grid[i][colIndex];
         }
         return column;
-    }
-
-
-    default void printGrid(int[][] grid) {
-        System.out.println(Arrays.deepToString(grid).replace("], ", "]\n"));
     }
 
 }
