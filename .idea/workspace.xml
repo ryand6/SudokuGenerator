@@ -44,7 +44,7 @@
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;
   }
 }</component>
-  <component name="RunManager" selected="Application.com.github.ryand6.sudokuGenerator.GridGenerator">
+  <component name="RunManager" selected="Application.com.github.ryand6.sudokuGenerator.LogicalAssessor">
     <configuration name="&lt;template&gt;" type="TestNG" default="true" selected="false">
       <option name="VM_PARAMETERS" value="-ea" />
       <option name="WORKING_DIRECTORY" value="%MODULE_WORKING_DIR%" />
@@ -55,6 +55,11 @@
     </configuration>
     <configuration name="com.github.ryand6.sudokuGenerator.GridGenerator" type="Application" factoryName="Application">
       <option name="MAIN_CLASS_NAME" value="com.github.ryand6.sudokuGenerator.GridGenerator" />
+      <module name="SudokuGenerator" />
+      <method v="2" />
+    </configuration>
+    <configuration name="com.github.ryand6.sudokuGenerator.LogicalAssessor" type="Application" factoryName="Application">
+      <option name="MAIN_CLASS_NAME" value="com.github.ryand6.sudokuGenerator.LogicalAssessor" />
       <module name="SudokuGenerator" />
       <method v="2" />
     </configuration>
