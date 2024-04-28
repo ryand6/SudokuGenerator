@@ -32,10 +32,21 @@ public class LogicalAssessor {
         public String toString() {
             return "(" + this.row + ", " + this.col + ")";
         }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == this) {
+                return true;
+            }
+            if (!(obj instanceof Cell)) {
+                return false;
+            }
+            Cell comp = (Cell) obj;
+            return comp.row == this.row && comp.col == this.col;
+        }
     }
 
     public LogicalAssessor() {
-        this.strategyMap = new HashMap<>();
         initialiseAllHouse();
     }
 
@@ -95,6 +106,7 @@ public class LogicalAssessor {
             }
         }
 
+        // Merge each list of houses into one list of houses
         List<List<Cell>> combinedHouses = new ArrayList<>();
         combinedHouses.addAll(rowHouses);
         combinedHouses.addAll(colHouses);
@@ -119,11 +131,38 @@ public class LogicalAssessor {
         return blockHouse;
     }
 
+    /*
+    Simple elimination strategy, removing illegal candidates from cells. If a cell with candidates ends up with
+    only 1x possible candidate through this method then the result is that the cell contains a Naked Single
+     */
+    private void basicElimination() {
+        strategyMap.putIfAbsent("Basic Elimination", 0);
+        for (List<Cell> house: allHouses) {
+            for (Cell cell1: house) {
+                if (candidatesGrid[cell1.row][cell1.col].size() != 1) {
+                    continue;
+                }
+                // Get the only value in the set - this represents the known answer to that cell
+                int val = candidatesGrid[cell1.row][cell1.col].iterator().next();
+                // For each cell in the house, remove any occurrences of a known value from its list of candidates
+                for (Cell cell2: house) {
+                    if (candidatesGrid[cell2.row][cell2.col].contains(val) && !cell1.equals(cell2)) {
+                        candidatesGrid[cell2.row][cell2.col].remove(val);
+                        int count = strategyMap.get("Basic Elimination");
+                        strategyMap.put("Basic Elimination", ++count);
+                    }
+                }
+            }
+        }
+    }
+
     // Used to attempt to solve the grid using variety of techniques, as well as storing the counts of techniques used
     // so a difficulty rating can be defined. Returns a boolean based on whether the grid can be solved using these
     // techniques or not.
     public boolean solve(int[][] grid) {
         this.grid = grid;
+        // Used to store counts for each strategy used
+        this.strategyMap = new HashMap<>();
         return false;
     }
 
