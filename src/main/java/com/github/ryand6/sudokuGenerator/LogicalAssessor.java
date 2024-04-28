@@ -131,12 +131,26 @@ public class LogicalAssessor {
         return blockHouse;
     }
 
+    // Get count of cells left to solve on the board
+    private int cellsToSolve() {
+        int count = 0;
+        for (int row = 0; row < 9; row++) {
+            for (int col = 0; col < 9; col++) {
+                if (candidatesGrid[row][col].size() != 1) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
     /*
     Simple elimination strategy, removing illegal candidates from cells. If a cell with candidates ends up with
     only 1x possible candidate through this method then the result is that the cell contains a Naked Single
      */
-    private void basicElimination() {
+    private boolean basicElimination() {
         strategyMap.putIfAbsent("Basic Elimination", 0);
+        boolean candidatesEliminated = false;
         for (List<Cell> house: allHouses) {
             for (Cell cell1: house) {
                 if (candidatesGrid[cell1.row][cell1.col].size() != 1) {
@@ -150,10 +164,16 @@ public class LogicalAssessor {
                         candidatesGrid[cell2.row][cell2.col].remove(val);
                         int count = strategyMap.get("Basic Elimination");
                         strategyMap.put("Basic Elimination", ++count);
+                        candidatesEliminated = true;
                     }
                 }
             }
         }
+        return candidatesEliminated;
+    }
+
+    private boolean hiddenSingle() {
+        return false;
     }
 
     // Used to attempt to solve the grid using variety of techniques, as well as storing the counts of techniques used
@@ -163,6 +183,27 @@ public class LogicalAssessor {
         this.grid = grid;
         // Used to store counts for each strategy used
         this.strategyMap = new HashMap<>();
+        int unsolvedCells = cellsToSolve();
+        // Loop through techniques, returning to the start of the loop when a technique is successful - this is used to try to simulate human
+        // order of strategy, returning to the easier techniques first to see if any more solutions can be found before employing more difficult
+        // techniques
+        while (unsolvedCells != 0) {
+            boolean techniqueSuccessful = false;
+
+            techniqueSuccessful = basicElimination();
+
+            if (!techniqueSuccessful) {
+                techniqueSuccessful = hiddenSingle();
+            }
+
+            // Exhausted all available techniques with no solution
+            if (!techniqueSuccessful) {
+                break;
+            }
+
+            unsolvedCells = cellsToSolve();
+        }
+
         return false;
     }
 
