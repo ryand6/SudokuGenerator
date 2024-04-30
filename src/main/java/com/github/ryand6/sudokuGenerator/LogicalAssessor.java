@@ -2,7 +2,6 @@ package com.github.ryand6.sudokuGenerator;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 
 /*
@@ -13,7 +12,7 @@ import java.util.List;
 public class LogicalAssessor {
 
     private int [][] grid;
-    private HashSet<Integer>[][] candidatesGrid;
+    private List<Integer>[][] candidatesGrid;
     private List<List<Cell>> allHouses;
     private HashMap<String, Integer> strategyMap;
     private String rating;
@@ -54,10 +53,10 @@ public class LogicalAssessor {
     // only contains that as it's candidate, and empty cells have potential candidates 1 - 9. These will
     // be reduced once solving strategies are applied.
     private void fillInitialCandidates() {
-        this.candidatesGrid = new HashSet[9][9];
+        this.candidatesGrid = new List[9][9];
         for (int row = 0; row < 9; row++) {
             for (int col = 0; col < 9; col++) {
-                candidatesGrid[row][col] = new HashSet<>();
+                candidatesGrid[row][col] = new ArrayList<>();
                 // If number already exists, add the number as the only candidate
                 if (grid[row][col] != 0) {
                     candidatesGrid[row][col].add(grid[row][col]);
@@ -157,7 +156,7 @@ public class LogicalAssessor {
                     continue;
                 }
                 // Get the only value in the set - this represents the known answer to that cell
-                int val = candidatesGrid[cell1.row][cell1.col].iterator().next();
+                int val = candidatesGrid[cell1.row][cell1.col].get(0);
                 // For each cell in the house, remove any occurrences of a known value from its list of candidates
                 for (Cell cell2: house) {
                     if (candidatesGrid[cell2.row][cell2.col].contains(val) && !cell1.equals(cell2)) {
@@ -172,8 +171,44 @@ public class LogicalAssessor {
         return candidatesEliminated;
     }
 
-    private boolean hiddenSingle() {
-        return false;
+    public boolean hiddenSingle() {
+        strategyMap.putIfAbsent("Hidden Single", 0);
+        boolean candidatesEliminated = false;
+        for (int i = 1; i < 10; i++) {
+            for (List<Cell> house : allHouses) {
+                int cellsEliminated = findUniqueCandidateInHouse(house, i);
+                if (cellsEliminated != 0) {
+                    int count = strategyMap.get("Hidden Single");
+                    strategyMap.put("Hidden Single", (count + cellsEliminated));
+                    candidatesEliminated = true;
+                }
+            }
+        }
+        return candidatesEliminated;
+    }
+
+    // Helper function for the hiddenSingle method - used to check if a value is unique in house, and
+    // if so, clean the rest of the candidates from the cell where the value is held, returning the number
+    // of cleaned candidates so the strategyMap can be updated
+    private int findUniqueCandidateInHouse(List<Cell> house, int num) {
+        int count = 0;
+        int candidatesEliminated = 0;
+        Cell cellToClean = new Cell(-1, -1);
+        for (Cell cell: house) {
+            if (candidatesGrid[cell.row][cell.col].contains(num)) {
+                count++;
+                cellToClean = cell;
+            }
+        }
+        if (count == 1) {
+            for (int i = 1; i < 10; i++) {
+                if (i != num) {
+                    candidatesGrid[cellToClean.row][cellToClean.col].remove(i);
+                    candidatesEliminated++;
+                }
+            }
+        }
+        return candidatesEliminated;
     }
 
     // Used to attempt to solve the grid using variety of techniques, as well as storing the counts of techniques used
@@ -181,6 +216,7 @@ public class LogicalAssessor {
     // techniques or not.
     public boolean solve(int[][] grid) {
         this.grid = grid;
+        fillInitialCandidates();
         // Used to store counts for each strategy used
         this.strategyMap = new HashMap<>();
         int unsolvedCells = cellsToSolve();
@@ -212,11 +248,27 @@ public class LogicalAssessor {
 
     }
 
+    public HashMap<String, Integer> getStrategyMap() {
+        return this.strategyMap;
+    };
+
     public static void main(String[] args) {
-        LogicalAssessor logicalAssessor = new LogicalAssessor();
-        List<List<Cell>> allHouses = logicalAssessor.getAllHouses();
-        for (int i = 0; i < allHouses.size(); i++) {
-            System.out.println(allHouses.get(i).toString());
-        }
+        int[][] sudokuGrid1 = {
+                {5, 3, 4, 6, 0, 8, 9, 1, 2},
+                {6, 7, 2, 1, 9, 5, 3, 4, 8},
+                {1, 9, 8, 3, 4, 2, 5, 6, 7},
+                {8, 5, 9, 7, 6, 1, 4, 2, 3},
+                {0, 2, 6, 8, 5, 3, 7, 9, 0},
+                {7, 1, 3, 9, 2, 4, 8, 5, 6},
+                {9, 6, 1, 5, 3, 7, 2, 8, 4},
+                {2, 8, 7, 4, 1, 9, 6, 3, 5},
+                {3, 4, 5, 2, 0, 6, 1, 7, 9}
+        };
+
+        LogicalAssessor solver = new LogicalAssessor();
+        solver.solve(sudokuGrid1);
+        HashMap<String, Integer> sMap = solver.getStrategyMap();
+        int eliminationCount = sMap.get("Basic Elimination");
+        System.out.println(eliminationCount);
     }
 }
