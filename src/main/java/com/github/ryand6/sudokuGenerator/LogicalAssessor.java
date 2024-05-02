@@ -145,7 +145,7 @@ public class LogicalAssessor {
     }
 
     /*
-    Simple elimination strategy, removing illegal candidates from cells. If a cell with candidates ends up with
+    Strategy 1) Simple elimination strategy, removing illegal candidates from cells. If a cell with candidates ends up with
     only 1x possible candidate through this method then the result is that the cell contains a Naked Single
      */
     private boolean basicElimination() {
@@ -173,7 +173,10 @@ public class LogicalAssessor {
         return candidatesEliminated;
     }
 
-    public boolean hiddenSingle() {
+    /*
+    Strategy 2)
+     */
+    private boolean hiddenSingle() {
         strategyMap.putIfAbsent("Hidden Single", 0);
         boolean candidatesEliminated = false;
         for (int i = 1; i < 10; i++) {
@@ -214,6 +217,57 @@ public class LogicalAssessor {
         return candidatesEliminated;
     }
 
+    /*
+    Strategy 3)
+     */
+    private boolean nakedPair() {
+        strategyMap.putIfAbsent("Naked Pair", 0);
+        boolean candidatesEliminated = false;
+        for (List<Cell> house: allHouses) {
+            for (Cell cell1 : house) {
+                // Only investigate cells that contain a pair of candidates
+                if (candidatesGrid[cell1.row][cell1.col].size() != 2) {
+                    continue;
+                }
+                for (Cell cell2 : house) {
+                    if (cell1 == cell2){
+                        continue;
+                    }
+                    // Clean up rest of cells in house of numbers found in the pair if two cells consist of a matching pair
+                    // of candidates within the house
+                    if (candidatesGrid[cell1.row][cell1.col].equals(candidatesGrid[cell2.row][cell2.col].size())) {
+                        int cellsEliminated = cleanHouseOfPairs(house, cell1, cell2);
+                        if (cellsEliminated != 0) {
+                            int count = strategyMap.get("Naked Pair");
+                            strategyMap.put("Naked Pair", (count + cellsEliminated));
+                            candidatesEliminated = true;
+                        }
+                    }
+                }
+            }
+        }
+        return candidatesEliminated;
+    }
+
+    // Helper function for nakedDouble method used to remove values from the naked pair in all other cells in
+    // the house in which the naked pair was found
+    private int cleanHouseOfPairs(List<Cell> house, Cell cell1, Cell cell2) {
+        int candidatesEliminated = 0;
+        List<Integer> vals = candidatesGrid[cell1.row][cell1.col];
+        for (Cell cell: house) {
+            if (cell == cell1 || cell == cell2) {
+                continue;
+            }
+            for (int i: vals) {
+                if (candidatesGrid[cell.row][cell.col].contains(i)) {
+                    candidatesGrid[cell.row][cell.col].remove((Integer) i);
+                    candidatesEliminated++;
+                }
+            }
+        }
+        return candidatesEliminated;
+    }
+
     // Used to attempt to solve the grid using variety of techniques, as well as storing the counts of techniques used
     // so a difficulty rating can be defined. Returns a boolean based on whether the grid can be solved using these
     // techniques or not.
@@ -228,18 +282,17 @@ public class LogicalAssessor {
         // techniques
         while (unsolvedCells != 0) {
             boolean techniqueSuccessful = false;
-
             techniqueSuccessful = basicElimination();
-
             if (!techniqueSuccessful) {
                 techniqueSuccessful = hiddenSingle();
             }
-
+            if (!techniqueSuccessful) {
+                techniqueSuccessful = nakedPair();
+            }
             // Exhausted all available techniques with no solution
             if (!techniqueSuccessful) {
                 break;
             }
-
             unsolvedCells = cellsToSolve();
         }
 
