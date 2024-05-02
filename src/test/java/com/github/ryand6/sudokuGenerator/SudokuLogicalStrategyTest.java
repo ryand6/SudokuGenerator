@@ -6,7 +6,7 @@ import java.util.HashMap;
 
 import static org.junit.Assert.assertTrue;
 
-public class SudokuLogicalStrategyTester {
+public class SudokuLogicalStrategyTest {
 
     @Test
     public void testBasicPuzzles_SimpleEliminationOnly() {
@@ -34,7 +34,24 @@ public class SudokuLogicalStrategyTester {
 
     @Test
     public void testHiddenSingle_HiddenSingleExists() {
+        int[][] sudokuGrid1 = {
+                {0, 2, 8, 0, 0, 7, 0, 0, 0},
+                {0, 1, 6, 0, 8, 3, 0, 7, 0},
+                {0, 0, 0, 0, 2, 0, 8, 5, 1},
+                {1, 3, 7, 2, 9, 0, 0, 0, 0},
+                {0, 0, 0, 7, 3, 0, 0, 0, 0},
+                {0, 0, 0, 0, 4, 6, 3, 0, 7},
+                {2, 9, 0, 0, 7, 0, 0, 0, 0},
+                {0, 0, 0, 8, 6, 0, 1, 4, 0},
+                {0, 0, 0, 3, 0, 0, 7, 0, 0}
+        };
 
+        LogicalAssessor solver = new LogicalAssessor();
+        solver.solve(sudokuGrid1);
+        HashMap<String, Integer> sMap = solver.getStrategyMap();
+        int eliminationCount = sMap.get("Hidden Single");
+        System.out.println(eliminationCount);
+        assertTrue(eliminationCount == 2);
     }
 
 }

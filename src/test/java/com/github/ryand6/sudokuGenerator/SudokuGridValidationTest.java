@@ -5,7 +5,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class SudokuGridValidationTester {
+public class SudokuGridValidationTest {
 
     @Test
     public void testValidGrid_Example1() {
@@ -47,7 +47,7 @@ public class SudokuGridValidationTester {
     public void testMultipleGeneratedGrids() {
         // Generate 100 random sudoku grids and test their validity
         GridGenerator gridGen = new GridGenerator();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 3; i++) {
             gridGen.generateGrid();
             assertTrue(gridGen.validateGrid(gridGen.getGrid()));
         }

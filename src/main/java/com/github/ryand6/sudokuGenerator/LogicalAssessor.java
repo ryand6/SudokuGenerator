@@ -1,6 +1,7 @@
 package com.github.ryand6.sudokuGenerator;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -160,7 +161,8 @@ public class LogicalAssessor {
                 // For each cell in the house, remove any occurrences of a known value from its list of candidates
                 for (Cell cell2: house) {
                     if (candidatesGrid[cell2.row][cell2.col].contains(val) && !cell1.equals(cell2)) {
-                        candidatesGrid[cell2.row][cell2.col].remove(val);
+                        // Using wrapper type to remove the value object itself, not the element at index position equal to val
+                        candidatesGrid[cell2.row][cell2.col].remove((Integer) val);
                         int count = strategyMap.get("Basic Elimination");
                         strategyMap.put("Basic Elimination", ++count);
                         candidatesEliminated = true;
@@ -202,8 +204,9 @@ public class LogicalAssessor {
         }
         if (count == 1) {
             for (int i = 1; i < 10; i++) {
-                if (i != num) {
-                    candidatesGrid[cellToClean.row][cellToClean.col].remove(i);
+                if (candidatesGrid[cellToClean.row][cellToClean.col].contains(i) && i != num) {
+                    // Using wrapper type to remove the value object itself, not the element at index position equal to i
+                    candidatesGrid[cellToClean.row][cellToClean.col].remove((Integer) i);
                     candidatesEliminated++;
                 }
             }
@@ -252,23 +255,46 @@ public class LogicalAssessor {
         return this.strategyMap;
     };
 
+    public void printCandidatesGrid() {
+        System.out.println(Arrays.deepToString(candidatesGrid).replace("], ", "]\n"));
+    };
+
     public static void main(String[] args) {
+//        int[][] sudokuGrid1 = {
+//                {5, 3, 4, 6, 0, 8, 9, 1, 2},
+//                {6, 7, 2, 1, 9, 5, 3, 4, 8},
+//                {1, 9, 8, 3, 4, 2, 5, 6, 7},
+//                {8, 5, 9, 7, 6, 1, 4, 2, 3},
+//                {0, 2, 6, 8, 5, 3, 7, 9, 0},
+//                {7, 1, 3, 9, 2, 4, 8, 5, 6},
+//                {9, 6, 1, 5, 3, 7, 2, 8, 4},
+//                {2, 8, 7, 4, 1, 9, 6, 3, 5},
+//                {3, 4, 5, 2, 0, 6, 1, 7, 9}
+//        };
+//
+//        LogicalAssessor solver = new LogicalAssessor();
+//        solver.solve(sudokuGrid1);
+//        HashMap<String, Integer> sMap = solver.getStrategyMap();
+//        int eliminationCount = sMap.get("Basic Elimination");
+//        System.out.println(eliminationCount);
+
         int[][] sudokuGrid1 = {
-                {5, 3, 4, 6, 0, 8, 9, 1, 2},
-                {6, 7, 2, 1, 9, 5, 3, 4, 8},
-                {1, 9, 8, 3, 4, 2, 5, 6, 7},
-                {8, 5, 9, 7, 6, 1, 4, 2, 3},
-                {0, 2, 6, 8, 5, 3, 7, 9, 0},
-                {7, 1, 3, 9, 2, 4, 8, 5, 6},
-                {9, 6, 1, 5, 3, 7, 2, 8, 4},
-                {2, 8, 7, 4, 1, 9, 6, 3, 5},
-                {3, 4, 5, 2, 0, 6, 1, 7, 9}
+                {0, 2, 8, 0, 0, 7, 0, 0, 0},
+                {0, 1, 6, 0, 8, 3, 0, 7, 0},
+                {0, 0, 0, 0, 2, 0, 8, 5, 1},
+                {1, 3, 7, 2, 9, 0, 0, 0, 0},
+                {0, 0, 0, 7, 3, 0, 0, 0, 0},
+                {0, 0, 0, 0, 4, 6, 3, 0, 7},
+                {2, 9, 0, 0, 7, 0, 0, 0, 0},
+                {0, 0, 0, 8, 6, 0, 1, 4, 0},
+                {0, 0, 0, 3, 0, 0, 7, 0, 0}
         };
 
         LogicalAssessor solver = new LogicalAssessor();
         solver.solve(sudokuGrid1);
         HashMap<String, Integer> sMap = solver.getStrategyMap();
-        int eliminationCount = sMap.get("Basic Elimination");
+        int eliminationCount = sMap.get("Hidden Single");
         System.out.println(eliminationCount);
+        solver.printCandidatesGrid();
     }
 }
