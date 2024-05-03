@@ -221,6 +221,7 @@ public class LogicalAssessor {
     Strategy 3)
      */
     private boolean nakedPair() {
+        System.out.println("Started Naked Pair strat");
         strategyMap.putIfAbsent("Naked Pair", 0);
         boolean candidatesEliminated = false;
         for (List<Cell> house: allHouses) {
@@ -331,22 +332,41 @@ public class LogicalAssessor {
 //        int eliminationCount = sMap.get("Basic Elimination");
 //        System.out.println(eliminationCount);
 
+//        int[][] sudokuGrid1 = {
+//                {0, 2, 8, 0, 0, 7, 0, 0, 0},
+//                {0, 1, 6, 0, 8, 3, 0, 7, 0},
+//                {0, 0, 0, 0, 2, 0, 8, 5, 1},
+//                {1, 3, 7, 2, 9, 0, 0, 0, 0},
+//                {0, 0, 0, 7, 3, 0, 0, 0, 0},
+//                {0, 0, 0, 0, 4, 6, 3, 0, 7},
+//                {2, 9, 0, 0, 7, 0, 0, 0, 0},
+//                {0, 0, 0, 8, 6, 0, 1, 4, 0},
+//                {0, 0, 0, 3, 0, 0, 7, 0, 0}
+//        };
+//
+//        LogicalAssessor solver = new LogicalAssessor();
+//        solver.solve(sudokuGrid1);
+//        HashMap<String, Integer> sMap = solver.getStrategyMap();
+//        int eliminationCount = sMap.get("Hidden Single");
+//        System.out.println(eliminationCount);
+//        solver.printCandidatesGrid();
+
         int[][] sudokuGrid1 = {
-                {0, 2, 8, 0, 0, 7, 0, 0, 0},
-                {0, 1, 6, 0, 8, 3, 0, 7, 0},
-                {0, 0, 0, 0, 2, 0, 8, 5, 1},
-                {1, 3, 7, 2, 9, 0, 0, 0, 0},
-                {0, 0, 0, 7, 3, 0, 0, 0, 0},
-                {0, 0, 0, 0, 4, 6, 3, 0, 7},
-                {2, 9, 0, 0, 7, 0, 0, 0, 0},
-                {0, 0, 0, 8, 6, 0, 1, 4, 0},
-                {0, 0, 0, 3, 0, 0, 7, 0, 0}
+                {4, 0, 0, 0, 0, 0, 9, 3, 8},
+                {0, 3, 2, 0, 9, 4, 1, 0, 0},
+                {0, 9, 5, 3, 0, 0, 2, 4, 0},
+                {3, 7, 0, 6, 0, 9, 0, 0, 4},
+                {5, 2, 9, 0, 0, 1, 6, 7, 3},
+                {6, 0, 4, 7, 0, 3, 0, 9, 0},
+                {9, 5, 7, 0, 0, 8, 3, 0, 0},
+                {0, 0, 3, 9, 0, 0, 4, 0, 0},
+                {2, 4, 0, 0, 3, 0, 7, 0, 9}
         };
 
         LogicalAssessor solver = new LogicalAssessor();
         solver.solve(sudokuGrid1);
         HashMap<String, Integer> sMap = solver.getStrategyMap();
-        int eliminationCount = sMap.get("Hidden Single");
+        int eliminationCount = sMap.get("Naked Pair");
         System.out.println(eliminationCount);
         solver.printCandidatesGrid();
     }
