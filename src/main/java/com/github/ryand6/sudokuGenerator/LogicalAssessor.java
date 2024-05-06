@@ -236,7 +236,7 @@ public class LogicalAssessor {
                     }
                     // Clean up rest of cells in house of numbers found in the pair if two cells consist of a matching pair
                     // of candidates within the house
-                    if (candidatesGrid[cell1.row][cell1.col].equals(candidatesGrid[cell2.row][cell2.col].size())) {
+                    if (candidatesGrid[cell1.row][cell1.col].equals(candidatesGrid[cell2.row][cell2.col])) {
                         int cellsEliminated = cleanHouseOfPairs(house, cell1, cell2);
                         if (cellsEliminated != 0) {
                             int count = strategyMap.get("Naked Pair");
@@ -368,6 +368,16 @@ public class LogicalAssessor {
         HashMap<String, Integer> sMap = solver.getStrategyMap();
         int eliminationCount = sMap.get("Naked Pair");
         System.out.println(eliminationCount);
+        GridGenerator gridGen = new GridGenerator();
+        // validate solved grid by converting candidates grid to int nested array and checking validity
+        int[][] gridSolved = new int[9][9];
+        for (int row = 0; row < 9; row++) {
+            for (int col = 0; col < 9; col++) {
+                gridSolved[row][col] = solver.candidatesGrid[row][col].get(0);
+            }
+        }
+        System.out.println(Arrays.deepToString(gridSolved).replace("], ", "]\n"));
+        System.out.println(gridGen.validateGrid(gridSolved));
         solver.printCandidatesGrid();
     }
 }
