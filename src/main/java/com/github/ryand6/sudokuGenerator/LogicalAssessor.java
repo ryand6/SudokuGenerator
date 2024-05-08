@@ -1,9 +1,6 @@
 package com.github.ryand6.sudokuGenerator;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 /*
     Used to assess the validity of the problem through human logical solving techniques, rejecting
@@ -174,7 +171,8 @@ public class LogicalAssessor {
     }
 
     /*
-    Strategy 2)
+    Strategy 2) seeks to find cell with a candidate not present in the rest of the house,
+    and if so removes all other candidates from that cell
      */
     private boolean hiddenSingle() {
         strategyMap.putIfAbsent("Hidden Single", 0);
@@ -218,10 +216,10 @@ public class LogicalAssessor {
     }
 
     /*
-    Strategy 3)
+    Strategy 3) Where two cells that contain matching candidate pairs are found in a house,
+    remove those candidates from the other cells in the house if present
      */
     private boolean nakedPair() {
-        System.out.println("Started Naked Pair strat");
         strategyMap.putIfAbsent("Naked Pair", 0);
         boolean candidatesEliminated = false;
         for (List<Cell> house: allHouses) {
@@ -250,13 +248,82 @@ public class LogicalAssessor {
         return candidatesEliminated;
     }
 
-    // Helper function for nakedDouble method used to remove values from the naked pair in all other cells in
+    // Helper function for nakedDouble method used to remove values contained in the naked pair from all other cells in
     // the house in which the naked pair was found
     private int cleanHouseOfPairs(List<Cell> house, Cell cell1, Cell cell2) {
         int candidatesEliminated = 0;
         List<Integer> vals = candidatesGrid[cell1.row][cell1.col];
         for (Cell cell: house) {
-            if (cell == cell1 || cell == cell2) {
+            if (cell == cell1 || cell == cell2 || candidatesGrid[cell.row][cell.col].size() == 1) {
+                continue;
+            }
+            for (int i: vals) {
+                if (candidatesGrid[cell.row][cell.col].contains(i)) {
+                    candidatesGrid[cell.row][cell.col].remove((Integer) i);
+                    candidatesEliminated++;
+                }
+            }
+        }
+        return candidatesEliminated;
+    }
+
+    /*
+    Strategy 4)
+     */
+    private boolean nakedTriple() {
+        strategyMap.putIfAbsent("Naked Triple", 0);
+        boolean candidatesEliminated = false;
+        for (List<Cell> house: allHouses) {
+            for (Cell cell1 : house) {
+                HashSet<Integer> tripleCandidates = new HashSet<>();
+                List<Cell> agreedCells = new ArrayList<>();
+                int cell1Size = candidatesGrid[cell1.row][cell1.col].size();
+                // Only investigate cells that contain either a pair or triple of candidates
+                if (cell1Size != 2 && cell1Size != 3) {
+                    continue;
+                }
+                tripleCandidates.addAll(candidatesGrid[cell1.row][cell1.col]);
+                agreedCells.add(cell1);
+                for (Cell cell2 : house) {
+                    int cell2Size = candidatesGrid[cell2.row][cell2.col].size();
+                    if (cell2Size != 2 && cell2Size != 3) {
+                        continue;
+                    }
+                    if (agreedCells.contains(cell2)){
+                        continue;
+                    }
+                    tripleCandidates.addAll(candidatesGrid[cell2.row][cell2.col]);
+                    agreedCells.add(cell2);
+                    // If the set contains more than 3x values, a triple has not been found therefore
+                    // remove the candidates from the most recently checked cell to continue searching
+                    if (tripleCandidates.size() > 3) {
+                        tripleCandidates.removeAll(candidatesGrid[cell2.row][cell2.col]);
+                        agreedCells.remove(cell2);
+                    }
+                    if (agreedCells.size() == 3 && tripleCandidates.size() == 3) {
+                        Cell agreedCell1 = agreedCells.get(0);
+                        Cell agreedCell2 = agreedCells.get(1);
+                        Cell agreedCell3 = agreedCells.get(2);
+                        int cellsEliminated = cleanHouseOfTriple(house, agreedCell1, agreedCell2, agreedCell3, tripleCandidates);
+                        if (cellsEliminated != 0) {
+                            int count = strategyMap.get("Naked Triple");
+                            strategyMap.put("Naked Triple", (count + cellsEliminated));
+                            candidatesEliminated = true;
+                        }
+                    }
+                }
+            }
+        }
+        return candidatesEliminated;
+    }
+
+    // Helper function for nakedTriple method used to remove values contained in the naked triple from all other cells in
+    // the house in which the naked triple was found
+    private int cleanHouseOfTriple(List<Cell> house, Cell cell1, Cell cell2, Cell cell3, HashSet<Integer> tripleCandidates) {
+        int candidatesEliminated = 0;
+        List<Integer> vals = tripleCandidates.stream().toList();
+        for (Cell cell: house) {
+            if (cell == cell1 || cell == cell2 || cell == cell3 || candidatesGrid[cell.row][cell.col].size() == 1) {
                 continue;
             }
             for (int i: vals) {
@@ -289,6 +356,9 @@ public class LogicalAssessor {
             }
             if (!techniqueSuccessful) {
                 techniqueSuccessful = nakedPair();
+            }
+            if (!techniqueSuccessful) {
+                techniqueSuccessful = nakedTriple();
             }
             // Exhausted all available techniques with no solution
             if (!techniqueSuccessful) {
@@ -351,33 +421,63 @@ public class LogicalAssessor {
 //        System.out.println(eliminationCount);
 //        solver.printCandidatesGrid();
 
+//        int[][] sudokuGrid1 = {
+//                {4, 0, 0, 0, 0, 0, 9, 3, 8},
+//                {0, 3, 2, 0, 9, 4, 1, 0, 0},
+//                {0, 9, 5, 3, 0, 0, 2, 4, 0},
+//                {3, 7, 0, 6, 0, 9, 0, 0, 4},
+//                {5, 2, 9, 0, 0, 1, 6, 7, 3},
+//                {6, 0, 4, 7, 0, 3, 0, 9, 0},
+//                {9, 5, 7, 0, 0, 8, 3, 0, 0},
+//                {0, 0, 3, 9, 0, 0, 4, 0, 0},
+//                {2, 4, 0, 0, 3, 0, 7, 0, 9}
+//        };
+//
+//        LogicalAssessor solver = new LogicalAssessor();
+//        solver.solve(sudokuGrid1);
+//        HashMap<String, Integer> sMap = solver.getStrategyMap();
+//        int eliminationCount = sMap.get("Naked Pair");
+//        System.out.println(eliminationCount);
+//        GridGenerator gridGen = new GridGenerator();
+//        // validate solved grid by converting candidates grid to int nested array and checking validity
+//        int[][] gridSolved = new int[9][9];
+//        for (int row = 0; row < 9; row++) {
+//            for (int col = 0; col < 9; col++) {
+//                gridSolved[row][col] = solver.candidatesGrid[row][col].get(0);
+//            }
+//        }
+//        System.out.println(Arrays.deepToString(gridSolved).replace("], ", "]\n"));
+//        System.out.println(gridGen.validateGrid(gridSolved));
+//        solver.printCandidatesGrid();
+
         int[][] sudokuGrid1 = {
-                {4, 0, 0, 0, 0, 0, 9, 3, 8},
-                {0, 3, 2, 0, 9, 4, 1, 0, 0},
-                {0, 9, 5, 3, 0, 0, 2, 4, 0},
-                {3, 7, 0, 6, 0, 9, 0, 0, 4},
-                {5, 2, 9, 0, 0, 1, 6, 7, 3},
-                {6, 0, 4, 7, 0, 3, 0, 9, 0},
-                {9, 5, 7, 0, 0, 8, 3, 0, 0},
-                {0, 0, 3, 9, 0, 0, 4, 0, 0},
-                {2, 4, 0, 0, 3, 0, 7, 0, 9}
+                {2, 9, 4, 5, 1, 3, 0, 0, 6},
+                {6, 0, 0, 8, 4, 2, 3, 1, 9},
+                {3, 0, 0, 6, 9, 7, 2, 5, 4},
+                {0, 0, 0, 0, 5, 6, 0, 0, 0},
+                {0, 4, 0, 0, 8, 0, 0, 6, 0},
+                {0, 0, 0, 4, 7, 0, 0, 0, 0},
+                {7, 3, 0, 1, 6, 4, 0, 0, 5},
+                {9, 0, 0, 7, 3, 5, 0, 0, 1},
+                {4, 0, 0, 9, 2, 8, 6, 3, 7}
         };
 
         LogicalAssessor solver = new LogicalAssessor();
         solver.solve(sudokuGrid1);
         HashMap<String, Integer> sMap = solver.getStrategyMap();
-        int eliminationCount = sMap.get("Naked Pair");
+        int eliminationCount = sMap.get("Naked Triple");
         System.out.println(eliminationCount);
-        GridGenerator gridGen = new GridGenerator();
-        // validate solved grid by converting candidates grid to int nested array and checking validity
-        int[][] gridSolved = new int[9][9];
-        for (int row = 0; row < 9; row++) {
-            for (int col = 0; col < 9; col++) {
-                gridSolved[row][col] = solver.candidatesGrid[row][col].get(0);
-            }
-        }
-        System.out.println(Arrays.deepToString(gridSolved).replace("], ", "]\n"));
-        System.out.println(gridGen.validateGrid(gridSolved));
         solver.printCandidatesGrid();
+//        GridGenerator gridGen = new GridGenerator();
+//        int[][] gridSolved = new int[9][9];
+//        for (int row = 0; row < 9; row++) {
+//            for (int col = 0; col < 9; col++) {
+//                gridSolved[row][col] = solver.candidatesGrid[row][col].get(0);
+//            }
+//        }
+//        System.out.println(Arrays.deepToString(gridSolved).replace("], ", "]\n"));
+//        System.out.println(gridGen.validateGrid(gridSolved));
+//        solver.printCandidatesGrid();
+
     }
 }
