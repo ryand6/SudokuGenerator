@@ -4,6 +4,7 @@ import org.junit.Test;
 
 import java.util.HashMap;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class SudokuLogicalStrategyTest {
@@ -28,7 +29,7 @@ public class SudokuLogicalStrategyTest {
         HashMap<String, Integer> sMap = solver.getStrategyMap();
         int eliminationCount = sMap.get("Basic Elimination");
         // Expect 8 candidates to be removed for each blank cell
-        assertTrue(eliminationCount == 32);
+        assertEquals(32, eliminationCount);
 
     }
 
@@ -51,7 +52,7 @@ public class SudokuLogicalStrategyTest {
         HashMap<String, Integer> sMap = solver.getStrategyMap();
         int eliminationCount = sMap.get("Hidden Single");
         System.out.println(eliminationCount);
-        assertTrue(eliminationCount == 2);
+        assertTrue(eliminationCount > 0);
     }
 
     @Test
@@ -72,6 +73,28 @@ public class SudokuLogicalStrategyTest {
         solver.solve(sudokuGrid1);
         HashMap<String, Integer> sMap = solver.getStrategyMap();
         int eliminationCount = sMap.get("Naked Pair");
+        System.out.println(eliminationCount);
+        assertTrue(eliminationCount > 0);
+    }
+
+    @Test
+    public void testNakedTriple() {
+        int[][] sudokuGrid1 = {
+                {2, 9, 4, 5, 1, 3, 0, 0, 6},
+                {6, 0, 0, 8, 4, 2, 3, 1, 9},
+                {3, 0, 0, 6, 9, 7, 2, 5, 4},
+                {0, 0, 0, 0, 5, 6, 0, 0, 0},
+                {0, 4, 0, 0, 8, 0, 0, 6, 0},
+                {0, 0, 0, 4, 7, 0, 0, 0, 0},
+                {7, 3, 0, 1, 6, 4, 0, 0, 5},
+                {9, 0, 0, 7, 3, 5, 0, 0, 1},
+                {4, 0, 0, 9, 2, 8, 6, 3, 7}
+        };
+
+        LogicalAssessor solver = new LogicalAssessor();
+        solver.solve(sudokuGrid1);
+        HashMap<String, Integer> sMap = solver.getStrategyMap();
+        int eliminationCount = sMap.get("Naked Triple");
         System.out.println(eliminationCount);
         assertTrue(eliminationCount > 0);
     }

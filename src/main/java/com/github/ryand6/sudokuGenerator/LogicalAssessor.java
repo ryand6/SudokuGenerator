@@ -284,33 +284,47 @@ public class LogicalAssessor {
                 }
                 tripleCandidates.addAll(candidatesGrid[cell1.row][cell1.col]);
                 agreedCells.add(cell1);
-                for (Cell cell2 : house) {
-                    int cell2Size = candidatesGrid[cell2.row][cell2.col].size();
-                    if (cell2Size != 2 && cell2Size != 3) {
-                        continue;
-                    }
-                    if (agreedCells.contains(cell2)){
-                        continue;
-                    }
-                    tripleCandidates.addAll(candidatesGrid[cell2.row][cell2.col]);
-                    agreedCells.add(cell2);
-                    // If the set contains more than 3x values, a triple has not been found therefore
-                    // remove the candidates from the most recently checked cell to continue searching
-                    if (tripleCandidates.size() > 3) {
-                        tripleCandidates.removeAll(candidatesGrid[cell2.row][cell2.col]);
-                        agreedCells.remove(cell2);
-                    }
-                    if (agreedCells.size() == 3 && tripleCandidates.size() == 3) {
-                        Cell agreedCell1 = agreedCells.get(0);
-                        Cell agreedCell2 = agreedCells.get(1);
-                        Cell agreedCell3 = agreedCells.get(2);
-                        int cellsEliminated = cleanHouseOfTriple(house, agreedCell1, agreedCell2, agreedCell3, tripleCandidates);
-                        if (cellsEliminated != 0) {
-                            int count = strategyMap.get("Naked Triple");
-                            strategyMap.put("Naked Triple", (count + cellsEliminated));
-                            candidatesEliminated = true;
-                        }
-                    }
+                candidatesEliminated = assessRestOfHouseForTriple(candidatesEliminated, house, tripleCandidates, agreedCells);
+            }
+        }
+        return candidatesEliminated;
+    }
+
+    // Helper function carrying out the inner loop that checks the rest of the house against the active cell to see if a naked triple can be found
+    private boolean assessRestOfHouseForTriple(boolean candidatesEliminated, List<Cell> house, HashSet<Integer> tripleCandidates, List<Cell> agreedCells) {
+        for (Cell cell2 : house) {
+            int cell2Size = candidatesGrid[cell2.row][cell2.col].size();
+            if (cell2Size != 2 && cell2Size != 3) {
+                continue;
+            }
+            if (agreedCells.contains(cell2)){
+                continue;
+            }
+            // Used to store any candidates that don't belong to other members of the agreed cells,
+            // so that these can be removed if the currently checked cell isn't part of a valid triple
+            List<Integer> uniqueCandidates = new ArrayList<>();
+            for (int candidate: candidatesGrid[cell2.row][cell2.col]) {
+                if (!tripleCandidates.contains(candidate)) {
+                    uniqueCandidates.add(candidate);
+                }
+            }
+            tripleCandidates.addAll(uniqueCandidates);
+            agreedCells.add(cell2);
+            // If the set contains more than 3x values, a triple has not been found therefore
+            // remove the candidates from the most recently checked cell to continue searching
+            if (tripleCandidates.size() > 3) {
+                tripleCandidates.removeAll(uniqueCandidates);
+                agreedCells.remove(cell2);
+            }
+            if (agreedCells.size() == 3 && tripleCandidates.size() == 3) {
+                Cell agreedCell1 = agreedCells.get(0);
+                Cell agreedCell2 = agreedCells.get(1);
+                Cell agreedCell3 = agreedCells.get(2);
+                int cellsEliminated = cleanHouseOfTriple(house, agreedCell1, agreedCell2, agreedCell3, tripleCandidates);
+                if (cellsEliminated != 0) {
+                    int count = strategyMap.get("Naked Triple");
+                    strategyMap.put("Naked Triple", (count + cellsEliminated));
+                    candidatesEliminated = true;
                 }
             }
         }
@@ -351,6 +365,7 @@ public class LogicalAssessor {
         while (unsolvedCells != 0) {
             boolean techniqueSuccessful = false;
             techniqueSuccessful = basicElimination();
+
             if (!techniqueSuccessful) {
                 techniqueSuccessful = hiddenSingle();
             }
@@ -467,17 +482,17 @@ public class LogicalAssessor {
         HashMap<String, Integer> sMap = solver.getStrategyMap();
         int eliminationCount = sMap.get("Naked Triple");
         System.out.println(eliminationCount);
+        GridGenerator gridGen = new GridGenerator();
+        int[][] gridSolved = new int[9][9];
+        for (int row = 0; row < 9; row++) {
+            for (int col = 0; col < 9; col++) {
+                gridSolved[row][col] = solver.candidatesGrid[row][col].get(0);
+            }
+        }
+        System.out.println(Arrays.deepToString(gridSolved).replace("], ", "]\n"));
+        System.out.println("Board validity:");
+        System.out.println(gridGen.validateGrid(gridSolved));
         solver.printCandidatesGrid();
-//        GridGenerator gridGen = new GridGenerator();
-//        int[][] gridSolved = new int[9][9];
-//        for (int row = 0; row < 9; row++) {
-//            for (int col = 0; col < 9; col++) {
-//                gridSolved[row][col] = solver.candidatesGrid[row][col].get(0);
-//            }
-//        }
-//        System.out.println(Arrays.deepToString(gridSolved).replace("], ", "]\n"));
-//        System.out.println(gridGen.validateGrid(gridSolved));
-//        solver.printCandidatesGrid();
 
     }
 }
