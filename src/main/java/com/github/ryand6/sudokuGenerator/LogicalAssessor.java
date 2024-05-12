@@ -358,69 +358,89 @@ public class LogicalAssessor {
         strategyMap.putIfAbsent("Hidden Pair", 0);
         boolean candidatesEliminated = false;
         for (List<Cell> house : allHouses) {
-            List<Cell> potentialPair = new ArrayList<>();
-            List<Integer> pairCandidates = new ArrayList<>();
             for (int i = 1; i < 10; i++) {
-                int checkedResult = checkCellCandidatesForHiddenPair(house, potentialPair, i);
-                if (checkedResult == -1) {
-                    pairCandidates.remove((Integer) i);
-                }
-                else if (checkedResult == 1) {
-                    pairCandidates.add(i);
-                }
-            }
-            if (pairCandidates.size() == 2) {
-                int cellsEliminated = cleanHiddenPairCellsOfOtherCandidates(pairCandidates, potentialPair);
-                if (cellsEliminated != 0) {
-                    int count = strategyMap.get("Hidden Pair");
-                    strategyMap.put("Hidden Pair", (count + cellsEliminated));
-                    candidatesEliminated = true;
+                List<Cell> potentialPair = new ArrayList<>();
+                List<Integer> pairCandidates = new ArrayList<>();
+                checkCellCandidatesForHiddenPair(house, potentialPair, pairCandidates, i);
+                if (pairCandidates.size() == 2) {
+                    int cellsEliminated = cleanHiddenPairCellsOfOtherCandidates(pairCandidates, potentialPair);
+                    if (cellsEliminated != 0) {
+                        int count = strategyMap.get("Hidden Pair");
+                        strategyMap.put("Hidden Pair", (count + cellsEliminated));
+                        candidatesEliminated = true;
+                    }
                 }
             }
         }
         return candidatesEliminated;
     }
 
-    // Helper function for hidden pair
-    private int checkCellCandidatesForHiddenPair(List<Cell> house, List<Cell> potentialPair, int num) {
-        // 0 = number not to be stored, -1 = previous stored number to be removed, 1 = number to be stored
-        int checkedResult = 0;
+    // Helper function for hidden pair to find the first potential candidate of the hidden pair
+    private void checkCellCandidatesForHiddenPair(List<Cell> house, List<Cell> potentialPair, List<Integer> pairCandidates, int num) {
         for (Cell cell : house) {
+            // If number being checked is already an answer to a cell, it cannot be a member of the hidden pair
             if (candidatesGrid[cell.row][cell.col].contains(num) && candidatesGrid[cell.row][cell.col].size() == 1) {
-                return 0;
+                return;
             }
             if (candidatesGrid[cell.row][cell.col].contains(num)) {
                 if (potentialPair.size() < 2) {
                     potentialPair.add(cell);
-                    checkedResult = 1;
-                }
-                else if (potentialPair.size() == 2 && potentialPair.contains(cell)) {
-                    checkedResult = 1;
-                    continue;
                 }
                 else if (potentialPair.size() == 2) {
                     potentialPair.clear();
-                    checkedResult = -1;
-                }
-                else {
-                    checkedResult = 0;
+                    return;
                 }
             }
         }
-        return checkedResult;
+        if (potentialPair.size() == 2) {
+            pairCandidates.add(num);
+            findSecondValueOfHiddenPair(house, potentialPair, pairCandidates);
+        }
+    }
+
+    // Helper function for hidden pair to find the second potential candidate of the hidden pair
+    private void findSecondValueOfHiddenPair(List<Cell> house, List<Cell> potentialPair, List<Integer> pairCandidates) {
+        Cell potentialCell1 = potentialPair.get(0);
+        Cell potentialCell2 = potentialPair.get(1);
+        for (int i = 1; i < 10; i++) {
+            boolean valid = true;
+            if (pairCandidates.contains(i)) {
+                continue;
+            }
+            if (!candidatesGrid[potentialCell1.row][potentialCell1.col].contains(i) || !candidatesGrid[potentialCell2.row][potentialCell2.col].contains(i)) {
+                continue;
+            }
+            for (Cell cell2 : house) {
+                if (candidatesGrid[cell2.row][cell2.col].contains(i) && candidatesGrid[cell2.row][cell2.col].size() == 1) {
+                    valid = false;
+                    break;
+                }
+                if (candidatesGrid[cell2.row][cell2.col].contains(i) && !potentialPair.contains(cell2)) {
+                    valid = false;
+                    break;
+                }
+            }
+            // If second number of pair passes all validity checks, a hidden pair has been found and the loop can be broken
+            if (valid) {
+                pairCandidates.add(i);
+                break;
+            }
+        }
     }
 
     // Remove any candidates not a part of the hidden pair from the cells in which the hidden pair exists
     private int cleanHiddenPairCellsOfOtherCandidates(List<Integer> pairCandidates, List<Cell> hiddenPairCells) {
         int candidatesEliminated = 0;
         for (Cell cell : hiddenPairCells) {
-            for (int candidate : candidatesGrid[cell.row][cell.col]) {
+            for (Iterator<Integer> iterator = candidatesGrid[cell.row][cell.col].iterator(); iterator.hasNext();) {
+                Integer candidate = iterator.next();
                 if (!pairCandidates.contains(candidate)) {
-                    candidatesGrid[cell.row][cell.col].remove((Integer) candidate);
+                    iterator.remove();
                     candidatesEliminated++;
                 }
             }
         }
+
         return candidatesEliminated;
     }
 
@@ -471,7 +491,7 @@ public class LogicalAssessor {
     };
 
     public void printCandidatesGrid() {
-        System.out.println(Arrays.deepToString(candidatesGrid).replace("], ", "]\n"));
+        System.out.println(Arrays.deepToString(candidatesGrid).replace("]], ", "]]\n"));
     };
 
     public static void main(String[] args) {
@@ -541,33 +561,62 @@ public class LogicalAssessor {
 //        System.out.println(gridGen.validateGrid(gridSolved));
 //        solver.printCandidatesGrid();
 
+//        int[][] sudokuGrid1 = {
+//                {2, 9, 4, 5, 1, 3, 0, 0, 6},
+//                {6, 0, 0, 8, 4, 2, 3, 1, 9},
+//                {3, 0, 0, 6, 9, 7, 2, 5, 4},
+//                {0, 0, 0, 0, 5, 6, 0, 0, 0},
+//                {0, 4, 0, 0, 8, 0, 0, 6, 0},
+//                {0, 0, 0, 4, 7, 0, 0, 0, 0},
+//                {7, 3, 0, 1, 6, 4, 0, 0, 5},
+//                {9, 0, 0, 7, 3, 5, 0, 0, 1},
+//                {4, 0, 0, 9, 2, 8, 6, 3, 7}
+//        };
+//
+//        LogicalAssessor solver = new LogicalAssessor();
+//        solver.solve(sudokuGrid1);
+//        HashMap<String, Integer> sMap = solver.getStrategyMap();
+//        int eliminationCount = sMap.get("Naked Triple");
+//        System.out.println(eliminationCount);
+//        GridGenerator gridGen = new GridGenerator();
+//        int[][] gridSolved = new int[9][9];
+//        for (int row = 0; row < 9; row++) {
+//            for (int col = 0; col < 9; col++) {
+//                gridSolved[row][col] = solver.candidatesGrid[row][col].get(0);
+//            }
+//        }
+//        System.out.println(Arrays.deepToString(gridSolved).replace("], ", "]\n"));
+//        System.out.println("Board validity:");
+//        System.out.println(gridGen.validateGrid(gridSolved));
+//        solver.printCandidatesGrid();
+
         int[][] sudokuGrid1 = {
-                {2, 9, 4, 5, 1, 3, 0, 0, 6},
-                {6, 0, 0, 8, 4, 2, 3, 1, 9},
-                {3, 0, 0, 6, 9, 7, 2, 5, 4},
-                {0, 0, 0, 0, 5, 6, 0, 0, 0},
-                {0, 4, 0, 0, 8, 0, 0, 6, 0},
-                {0, 0, 0, 4, 7, 0, 0, 0, 0},
-                {7, 3, 0, 1, 6, 4, 0, 0, 5},
-                {9, 0, 0, 7, 3, 5, 0, 0, 1},
-                {4, 0, 0, 9, 2, 8, 6, 3, 7}
+                {7, 2, 0, 4, 0, 8, 0, 3, 0},
+                {0, 8, 0, 0, 0, 0, 0, 4, 7},
+                {4, 0, 1, 0, 7, 6, 8, 0, 2},
+                {8, 1, 0, 7, 3, 9, 0, 0, 0},
+                {0, 0, 0, 8, 5, 1, 0, 0, 0},
+                {0, 0, 0, 2, 6, 4, 0, 8, 0},
+                {2, 0, 9, 6, 8, 0, 4, 1, 3},
+                {3, 4, 0, 0, 0, 0, 0, 0, 8},
+                {1, 6, 8, 9, 4, 3, 2, 7, 5}
         };
 
         LogicalAssessor solver = new LogicalAssessor();
         solver.solve(sudokuGrid1);
         HashMap<String, Integer> sMap = solver.getStrategyMap();
-        int eliminationCount = sMap.get("Naked Triple");
+        int eliminationCount = sMap.get("Hidden Pair");
         System.out.println(eliminationCount);
-        GridGenerator gridGen = new GridGenerator();
-        int[][] gridSolved = new int[9][9];
-        for (int row = 0; row < 9; row++) {
-            for (int col = 0; col < 9; col++) {
-                gridSolved[row][col] = solver.candidatesGrid[row][col].get(0);
-            }
-        }
-        System.out.println(Arrays.deepToString(gridSolved).replace("], ", "]\n"));
-        System.out.println("Board validity:");
-        System.out.println(gridGen.validateGrid(gridSolved));
+//        GridGenerator gridGen = new GridGenerator();
+//        int[][] gridSolved = new int[9][9];
+//        for (int row = 0; row < 9; row++) {
+//            for (int col = 0; col < 9; col++) {
+//                gridSolved[row][col] = solver.candidatesGrid[row][col].get(0);
+//            }
+//        }
+//        System.out.println(Arrays.deepToString(gridSolved).replace("], ", "]\n"));
+//        System.out.println("Board validity:");
+//        System.out.println(gridGen.validateGrid(gridSolved));
         solver.printCandidatesGrid();
 
     }
