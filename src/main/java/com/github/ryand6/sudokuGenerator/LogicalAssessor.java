@@ -268,7 +268,8 @@ public class LogicalAssessor {
     }
 
     /*
-    Strategy 4)
+    Strategy 4) Where 3x cells in a house contain in total 3x unique candidates between them, and each cell has either 2 or 3 candidates. When
+    this pattern is discovered, remove the unique candidates from all other cells within the house
      */
     private boolean nakedTriple() {
         strategyMap.putIfAbsent("Naked Triple", 0);
@@ -350,6 +351,79 @@ public class LogicalAssessor {
         return candidatesEliminated;
     }
 
+    /*
+    Strategy 5)
+     */
+    private boolean hiddenPair() {
+        strategyMap.putIfAbsent("Hidden Pair", 0);
+        boolean candidatesEliminated = false;
+        for (List<Cell> house : allHouses) {
+            List<Cell> potentialPair = new ArrayList<>();
+            List<Integer> pairCandidates = new ArrayList<>();
+            for (int i = 1; i < 10; i++) {
+                int checkedResult = checkCellCandidatesForHiddenPair(house, potentialPair, i);
+                if (checkedResult == -1) {
+                    pairCandidates.remove((Integer) i);
+                }
+                else if (checkedResult == 1) {
+                    pairCandidates.add(i);
+                }
+            }
+            if (pairCandidates.size() == 2) {
+                int cellsEliminated = cleanHiddenPairCellsOfOtherCandidates(pairCandidates, potentialPair);
+                if (cellsEliminated != 0) {
+                    int count = strategyMap.get("Hidden Pair");
+                    strategyMap.put("Hidden Pair", (count + cellsEliminated));
+                    candidatesEliminated = true;
+                }
+            }
+        }
+        return candidatesEliminated;
+    }
+
+    // Helper function for hidden pair
+    private int checkCellCandidatesForHiddenPair(List<Cell> house, List<Cell> potentialPair, int num) {
+        // 0 = number not to be stored, -1 = previous stored number to be removed, 1 = number to be stored
+        int checkedResult = 0;
+        for (Cell cell : house) {
+            if (candidatesGrid[cell.row][cell.col].contains(num) && candidatesGrid[cell.row][cell.col].size() == 1) {
+                return 0;
+            }
+            if (candidatesGrid[cell.row][cell.col].contains(num)) {
+                if (potentialPair.size() < 2) {
+                    potentialPair.add(cell);
+                    checkedResult = 1;
+                }
+                else if (potentialPair.size() == 2 && potentialPair.contains(cell)) {
+                    checkedResult = 1;
+                    continue;
+                }
+                else if (potentialPair.size() == 2) {
+                    potentialPair.clear();
+                    checkedResult = -1;
+                }
+                else {
+                    checkedResult = 0;
+                }
+            }
+        }
+        return checkedResult;
+    }
+
+    // Remove any candidates not a part of the hidden pair from the cells in which the hidden pair exists
+    private int cleanHiddenPairCellsOfOtherCandidates(List<Integer> pairCandidates, List<Cell> hiddenPairCells) {
+        int candidatesEliminated = 0;
+        for (Cell cell : hiddenPairCells) {
+            for (int candidate : candidatesGrid[cell.row][cell.col]) {
+                if (!pairCandidates.contains(candidate)) {
+                    candidatesGrid[cell.row][cell.col].remove((Integer) candidate);
+                    candidatesEliminated++;
+                }
+            }
+        }
+        return candidatesEliminated;
+    }
+
     // Used to attempt to solve the grid using variety of techniques, as well as storing the counts of techniques used
     // so a difficulty rating can be defined. Returns a boolean based on whether the grid can be solved using these
     // techniques or not.
@@ -365,7 +439,6 @@ public class LogicalAssessor {
         while (unsolvedCells != 0) {
             boolean techniqueSuccessful = false;
             techniqueSuccessful = basicElimination();
-
             if (!techniqueSuccessful) {
                 techniqueSuccessful = hiddenSingle();
             }
@@ -374,6 +447,9 @@ public class LogicalAssessor {
             }
             if (!techniqueSuccessful) {
                 techniqueSuccessful = nakedTriple();
+            }
+            if (!techniqueSuccessful) {
+                techniqueSuccessful = hiddenPair();
             }
             // Exhausted all available techniques with no solution
             if (!techniqueSuccessful) {
