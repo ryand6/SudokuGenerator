@@ -352,7 +352,8 @@ public class LogicalAssessor {
     }
 
     /*
-    Strategy 5)
+    Strategy 5) Search house for two cells that contain a pair of candidates unique to only those cells,
+    that are amongst other candidates which as a result can be removed once the pair is found
      */
     private boolean hiddenPair() {
         strategyMap.putIfAbsent("Hidden Pair", 0);
@@ -442,6 +443,67 @@ public class LogicalAssessor {
         }
 
         return candidatesEliminated;
+    }
+
+    /*
+    Strategy 6)
+     */
+    private boolean hiddenTriple() {
+        strategyMap.putIfAbsent("Hidden Triple", 0);
+        boolean candidatesEliminated = false;
+        List<List<Integer>> combinations = generateTriplesCombinations();
+        for (List<Cell> house : allHouses) {
+            for (List<Integer> combination : combinations) {
+                int count = 0;
+                HashSet<Integer> combinationCandidatesFound = new HashSet<>();
+                List<Cell> possibleCellsContainingTriple = new ArrayList<>();
+                for (Cell cell : house) {
+                    count += checkCellForTripleCombination(cell, combination, combinationCandidatesFound, possibleCellsContainingTriple);
+                }
+                if (count == 3 && combinationCandidatesFound.size() == 3 && possibleCellsContainingTriple.size() == 3) {
+                    int cellsEliminated = cleanCellsContainingHiddenTriple(house, possibleCellsContainingTriple, combination);
+                }
+            }
+        }
+        return candidatesEliminated;
+    }
+
+    private int checkCellForTripleCombination(Cell cell, List<Integer> combination, HashSet<Integer> combinationCandidatesFound, List<Cell> possibleCellsContainingTriple) {
+        int candidatesInCombination = 0;
+        List<Integer> tempCombinationCandidatesFound = new ArrayList<>();
+        for (int candidate : candidatesGrid[cell.row][cell.col]) {
+            if (combination.contains(candidate)) {
+                candidatesInCombination++;
+                tempCombinationCandidatesFound.add(candidate);
+            }
+        }
+        if (candidatesInCombination >= 2) {
+            possibleCellsContainingTriple.add(cell);
+            combinationCandidatesFound.addAll(tempCombinationCandidatesFound);
+            return 1;
+        }
+        return 0;
+    }
+
+    private int cleanCellsContainingHiddenTriple(List<Cell> house, List<Cell> cellsContainingTriple, List<Integer> combination) {
+        int candidatesEliminated = 0;
+        return candidatesEliminated;
+    }
+
+    // Helper function used to create a list of int arrays that contains each of the possible
+    // hidden triple combinations so that these can be iterated over
+    private List<List<Integer>> generateTriplesCombinations() {
+        List<List<Integer>> combinations = new ArrayList<>();
+        // Generate all combinations of triples that contain the numbers from 1 to 9
+        for (int i = 1; i <= 7; i++) {
+            for (int j = i + 1; j <= 8; j++) {
+                for (int k = j + 1; k <= 9; k++) {
+                    List<Integer> combination = new ArrayList<>(Arrays.asList(i, j, k));
+                    combinations.add(combination);
+                }
+            }
+        }
+        return combinations;
     }
 
     // Used to attempt to solve the grid using variety of techniques, as well as storing the counts of techniques used
