@@ -364,7 +364,7 @@ public class LogicalAssessor {
                 List<Integer> pairCandidates = new ArrayList<>();
                 checkCellCandidatesForHiddenPair(house, potentialPair, pairCandidates, i);
                 if (pairCandidates.size() == 2) {
-                    int cellsEliminated = cleanHiddenPairCellsOfOtherCandidates(pairCandidates, potentialPair);
+                    int cellsEliminated = cleanCellsOfOtherCandidates(pairCandidates, potentialPair);
                     if (cellsEliminated != 0) {
                         int count = strategyMap.get("Hidden Pair");
                         strategyMap.put("Hidden Pair", (count + cellsEliminated));
@@ -429,13 +429,13 @@ public class LogicalAssessor {
         }
     }
 
-    // Remove any candidates not a part of the hidden pair from the cells in which the hidden pair exists
-    private int cleanHiddenPairCellsOfOtherCandidates(List<Integer> pairCandidates, List<Cell> hiddenPairCells) {
+    // Remove any candidates not a part of the hidden pair/triple from the cells in which the hidden pair/triple exists
+    private int cleanCellsOfOtherCandidates(List<Integer> candidates, List<Cell> cellsToClean) {
         int candidatesEliminated = 0;
-        for (Cell cell : hiddenPairCells) {
+        for (Cell cell : cellsToClean) {
             for (Iterator<Integer> iterator = candidatesGrid[cell.row][cell.col].iterator(); iterator.hasNext();) {
                 Integer candidate = iterator.next();
-                if (!pairCandidates.contains(candidate)) {
+                if (!candidates.contains(candidate)) {
                     iterator.remove();
                     candidatesEliminated++;
                 }
@@ -453,41 +453,46 @@ public class LogicalAssessor {
         boolean candidatesEliminated = false;
         List<List<Integer>> combinations = generateTriplesCombinations();
         for (List<Cell> house : allHouses) {
+            CombinationLoop:
             for (List<Integer> combination : combinations) {
-                int count = 0;
-                HashSet<Integer> combinationCandidatesFound = new HashSet<>();
+                boolean skipCombination = false;
                 List<Cell> possibleCellsContainingTriple = new ArrayList<>();
+                HashSet<Integer> foundCandidates = new HashSet<>();
                 for (Cell cell : house) {
-                    count += checkCellForTripleCombination(cell, combination, combinationCandidatesFound, possibleCellsContainingTriple);
+                    skipCombination = checkCellForTripleCombination(cell, combination, foundCandidates, possibleCellsContainingTriple);
+                    if (skipCombination) {
+                        continue CombinationLoop;
+                    }
                 }
-                if (count == 3 && combinationCandidatesFound.size() == 3 && possibleCellsContainingTriple.size() == 3) {
-                    int cellsEliminated = cleanCellsContainingHiddenTriple(house, possibleCellsContainingTriple, combination);
+                if (possibleCellsContainingTriple.size() == 3 && foundCandidates.size() == 3) {
+                    int cellsEliminated = cleanCellsOfOtherCandidates(combination, possibleCellsContainingTriple);
+                    if (cellsEliminated != 0) {
+                        int strategyCount = strategyMap.get("Hidden Triple");
+                        strategyMap.put("Hidden Triple", (strategyCount + cellsEliminated));
+                        candidatesEliminated = true;
+                    }
                 }
             }
         }
         return candidatesEliminated;
     }
 
-    private int checkCellForTripleCombination(Cell cell, List<Integer> combination, HashSet<Integer> combinationCandidatesFound, List<Cell> possibleCellsContainingTriple) {
+    // Helper function used to make sure that at least two of the candidates in the combination appear in the cell
+    private boolean checkCellForTripleCombination(Cell cell, List<Integer> combination, HashSet<Integer> foundCandidates, List<Cell> possibleCellsContainingTriple) {
         int candidatesInCombination = 0;
-        List<Integer> tempCombinationCandidatesFound = new ArrayList<>();
+        List<Integer> tempCandidateArr = new ArrayList<>();
         for (int candidate : candidatesGrid[cell.row][cell.col]) {
             if (combination.contains(candidate)) {
                 candidatesInCombination++;
-                tempCombinationCandidatesFound.add(candidate);
+                tempCandidateArr.add(candidate);
             }
         }
         if (candidatesInCombination >= 2) {
             possibleCellsContainingTriple.add(cell);
-            combinationCandidatesFound.addAll(tempCombinationCandidatesFound);
-            return 1;
-        }
-        return 0;
-    }
-
-    private int cleanCellsContainingHiddenTriple(List<Cell> house, List<Cell> cellsContainingTriple, List<Integer> combination) {
-        int candidatesEliminated = 0;
-        return candidatesEliminated;
+            foundCandidates.addAll(tempCandidateArr);
+            return false;
+            // Skip the current combination loop if a single candidate is found, as it cannot be part of a triple then
+        } else return candidatesInCombination > 0;
     }
 
     // Helper function used to create a list of int arrays that contains each of the possible
@@ -532,6 +537,9 @@ public class LogicalAssessor {
             }
             if (!techniqueSuccessful) {
                 techniqueSuccessful = hiddenPair();
+            }
+            if (!techniqueSuccessful) {
+                techniqueSuccessful = hiddenTriple();
             }
             // Exhausted all available techniques with no solution
             if (!techniqueSuccessful) {
@@ -652,33 +660,52 @@ public class LogicalAssessor {
 //        System.out.println(gridGen.validateGrid(gridSolved));
 //        solver.printCandidatesGrid();
 
+//        int[][] sudokuGrid1 = {
+//                {7, 2, 0, 4, 0, 8, 0, 3, 0},
+//                {0, 8, 0, 0, 0, 0, 0, 4, 7},
+//                {4, 0, 1, 0, 7, 6, 8, 0, 2},
+//                {8, 1, 0, 7, 3, 9, 0, 0, 0},
+//                {0, 0, 0, 8, 5, 1, 0, 0, 0},
+//                {0, 0, 0, 2, 6, 4, 0, 8, 0},
+//                {2, 0, 9, 6, 8, 0, 4, 1, 3},
+//                {3, 4, 0, 0, 0, 0, 0, 0, 8},
+//                {1, 6, 8, 9, 4, 3, 2, 7, 5}
+//        };
+//
+//        LogicalAssessor solver = new LogicalAssessor();
+//        solver.solve(sudokuGrid1);
+//        HashMap<String, Integer> sMap = solver.getStrategyMap();
+//        int eliminationCount = sMap.get("Hidden Pair");
+//        System.out.println(eliminationCount);
+//        solver.printCandidatesGrid();
+
         int[][] sudokuGrid1 = {
-                {7, 2, 0, 4, 0, 8, 0, 3, 0},
-                {0, 8, 0, 0, 0, 0, 0, 4, 7},
-                {4, 0, 1, 0, 7, 6, 8, 0, 2},
-                {8, 1, 0, 7, 3, 9, 0, 0, 0},
-                {0, 0, 0, 8, 5, 1, 0, 0, 0},
-                {0, 0, 0, 2, 6, 4, 0, 8, 0},
-                {2, 0, 9, 6, 8, 0, 4, 1, 3},
-                {3, 4, 0, 0, 0, 0, 0, 0, 8},
-                {1, 6, 8, 9, 4, 3, 2, 7, 5}
+                {0, 0, 0, 0, 0, 1, 0, 3, 0},
+                {2, 3, 1, 0, 9, 0, 0, 0, 0},
+                {0, 6, 5, 0, 0, 3, 1, 0, 0},
+                {6, 7, 8, 9, 2, 4, 3, 0, 0},
+                {1, 0, 3, 0, 5, 0, 0, 0, 6},
+                {0, 0, 0, 1, 3, 6, 7, 0, 0},
+                {0, 0, 9, 3, 6, 0, 5, 7, 0},
+                {0, 0, 6, 0, 1, 9, 8, 4, 3},
+                {3, 0, 0, 0, 0, 0, 0, 0, 0}
         };
 
         LogicalAssessor solver = new LogicalAssessor();
         solver.solve(sudokuGrid1);
         HashMap<String, Integer> sMap = solver.getStrategyMap();
-        int eliminationCount = sMap.get("Hidden Pair");
+        int eliminationCount = sMap.get("Hidden Triple");
         System.out.println(eliminationCount);
-//        GridGenerator gridGen = new GridGenerator();
-//        int[][] gridSolved = new int[9][9];
-//        for (int row = 0; row < 9; row++) {
-//            for (int col = 0; col < 9; col++) {
-//                gridSolved[row][col] = solver.candidatesGrid[row][col].get(0);
-//            }
-//        }
-//        System.out.println(Arrays.deepToString(gridSolved).replace("], ", "]\n"));
-//        System.out.println("Board validity:");
-//        System.out.println(gridGen.validateGrid(gridSolved));
+        GridGenerator gridGen = new GridGenerator();
+        // validate solved grid by converting candidates grid to int nested array and checking validity
+        int[][] gridSolved = new int[9][9];
+        for (int row = 0; row < 9; row++) {
+            for (int col = 0; col < 9; col++) {
+                gridSolved[row][col] = solver.candidatesGrid[row][col].get(0);
+            }
+        }
+        System.out.println(Arrays.deepToString(gridSolved).replace("], ", "]\n"));
+        System.out.println(gridGen.validateGrid(gridSolved));
         solver.printCandidatesGrid();
 
     }
