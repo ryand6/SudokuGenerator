@@ -11,6 +11,9 @@ public class LogicalAssessor {
 
     private int [][] grid;
     private List<Integer>[][] candidatesGrid;
+    private List<List<Cell>> rowHouses;
+    private List<List<Cell>> colHouses;
+    private List<List<Cell>> blockHouses;
     private List<List<Cell>> allHouses;
     private HashMap<String, Integer> strategyMap;
     private String rating;
@@ -44,7 +47,7 @@ public class LogicalAssessor {
     }
 
     public LogicalAssessor() {
-        initialiseAllHouse();
+        initialiseAllHouses();
     }
 
     // Pencil in potential candidates for each grid cell, where any cell already containing a number
@@ -72,9 +75,9 @@ public class LogicalAssessor {
         }
     }
 
-    private void initialiseAllHouse() {
+    private void initialiseAllHouses() {
         // Each nested list represents a house (row) which contains each of the cells in that house
-        List<List<Cell>> rowHouses = new ArrayList<>();
+        this.rowHouses = new ArrayList<>();
         for (int row = 0; row < 9; row++) {
             List<Cell> rowHouse = new ArrayList<>();
             for (int col = 0; col < 9; col++) {
@@ -85,7 +88,7 @@ public class LogicalAssessor {
         }
 
         // Each nested list represents a house (column) which contains each of the cells in that house
-        List<List<Cell>> colHouses = new ArrayList<>();
+        this.colHouses = new ArrayList<>();
         for (int col = 0; col < 9; col++) {
             List<Cell> colHouse = new ArrayList<>();
             for (int row = 0; row < 9; row++) {
@@ -96,7 +99,7 @@ public class LogicalAssessor {
         }
 
         // Each nested list represents a house (block) which contains each of the cells in that house
-        List<List<Cell>> blockHouses = new ArrayList<>();
+        this.blockHouses = new ArrayList<>();
         for (int bRow = 0; bRow < 3; bRow++) {
             for (int bCol = 0; bCol < 3; bCol++) {
                 blockHouses.add(getBlockHouse(bRow * 3, bCol * 3));
@@ -511,6 +514,77 @@ public class LogicalAssessor {
         return combinations;
     }
 
+    /*
+    Strategy 7) Covers both pointing pairs and box line reduction
+     */
+    private boolean intersectionRemoval() {
+        strategyMap.putIfAbsent("Intersection", 0);
+        boolean candidatesEliminated = false;
+        List<List<Cell>> lines = new ArrayList<>();
+        lines.addAll(rowHouses);
+        lines.addAll(colHouses);
+        for (List<Cell> block : blockHouses) {
+            for (List<Cell> line : lines) {
+                HashSet<Cell> intersection = new HashSet<>(block);
+                intersection.retainAll(line);
+                // If no cells can be found to intersect both the block and the line, skip to next
+                if (intersection.isEmpty()) {
+                    continue;
+                }
+                HashSet<Cell> nonIntersectBlockCells = new HashSet<>(block);
+                nonIntersectBlockCells.removeAll(intersection);
+                List<Cell> blockOnlyCells = new ArrayList<>(nonIntersectBlockCells);
+                HashSet<Cell> nonIntersectLineCells = new HashSet<>(line);
+                nonIntersectLineCells.removeAll(intersection);
+                List<Cell> lineOnlyCells = new ArrayList<>(nonIntersectLineCells);
+
+                List<Integer> intersectCandidates = getCandidatesInHouse(new ArrayList<>(intersection));
+                List<Integer> blockOnlyCandidates = getCandidatesInHouse(blockOnlyCells);
+                List<Integer> lineOnlyCandidates = getCandidatesInHouse(lineOnlyCells);
+                int eliminatedCount = 0;
+                for (int i = 1; i < 10; i++) {
+                    // if true, box line reduction can potentially be applied - if 'i' is present in the intersection more than once,
+                    // any occurrence of 'i' in the box where the cells don't intersect, will be removed
+                    if (intersectCandidates.contains(i) && blockOnlyCandidates.contains(i) && !lineOnlyCandidates.contains(i)) {
+                        eliminatedCount += cleanHouseOfSingleCandidate(i, blockOnlyCells);
+                        // if true, pointing pair / triple has potentially been found - if 'i' is present in the intersection more than once,
+                        // any occurrence of 'i' in the intersecting line where the cells don't intersect, will be removed
+                    } else if (intersectCandidates.contains(i) && lineOnlyCandidates.contains(i) && !blockOnlyCandidates.contains(i)) {
+                        eliminatedCount += cleanHouseOfSingleCandidate(i, lineOnlyCells);
+                    }
+                }
+                if (eliminatedCount != 0) {
+                    int strategyCount = strategyMap.get("Intersection");
+                    strategyMap.put("Intersection", (strategyCount + eliminatedCount));
+                    candidatesEliminated = true;
+                }
+            }
+        }
+        return candidatesEliminated;
+    }
+
+    // Helper function for intersectionRemoval used to determine what possible candidates are found in a house
+    // which can be compared against the intersecting house
+    private List<Integer> getCandidatesInHouse(List<Cell> house) {
+        HashSet<Integer> foundCandidates = new HashSet<>();
+        for (Cell cell : house) {
+            foundCandidates.addAll(candidatesGrid[cell.row][cell.col]);
+        }
+        return new ArrayList<>(foundCandidates);
+    }
+
+    // Helper function for removing all occurrences of a single candidate from a house
+    private int cleanHouseOfSingleCandidate(int num, List<Cell> house) {
+        int counter = 0;
+        for (Cell cell : house) {
+            if (candidatesGrid[cell.row][cell.col].contains(num)) {
+                candidatesGrid[cell.row][cell.col].remove(num);
+                counter++;
+            }
+        }
+        return counter;
+    }
+
     // Used to attempt to solve the grid using variety of techniques, as well as storing the counts of techniques used
     // so a difficulty rating can be defined. Returns a boolean based on whether the grid can be solved using these
     // techniques or not.
@@ -540,6 +614,9 @@ public class LogicalAssessor {
             }
             if (!techniqueSuccessful) {
                 techniqueSuccessful = hiddenTriple();
+            }
+            if (!techniqueSuccessful) {
+                techniqueSuccessful = intersectionRemoval();
             }
             // Exhausted all available techniques with no solution
             if (!techniqueSuccessful) {
