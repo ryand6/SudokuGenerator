@@ -44,6 +44,11 @@ public class LogicalAssessor {
             Cell comp = (Cell) obj;
             return comp.row == this.row && comp.col == this.col;
         }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(row, col);
+        }
     }
 
     public LogicalAssessor() {
@@ -538,19 +543,19 @@ public class LogicalAssessor {
                 nonIntersectLineCells.removeAll(intersection);
                 List<Cell> lineOnlyCells = new ArrayList<>(nonIntersectLineCells);
 
-                List<Integer> intersectCandidates = getCandidatesInHouse(new ArrayList<>(intersection));
-                List<Integer> blockOnlyCandidates = getCandidatesInHouse(blockOnlyCells);
-                List<Integer> lineOnlyCandidates = getCandidatesInHouse(lineOnlyCells);
+                List<Integer> intersectCandidates = getCandidatesInCells(new ArrayList<>(intersection));
+                List<Integer> blockOnlyCandidates = getCandidatesInCells(blockOnlyCells);
+                List<Integer> lineOnlyCandidates = getCandidatesInCells(lineOnlyCells);
                 int eliminatedCount = 0;
                 for (int i = 1; i < 10; i++) {
                     // if true, box line reduction can potentially be applied - if 'i' is present in the intersection more than once,
                     // any occurrence of 'i' in the box where the cells don't intersect, will be removed
                     if (intersectCandidates.contains(i) && blockOnlyCandidates.contains(i) && !lineOnlyCandidates.contains(i)) {
-                        eliminatedCount += cleanHouseOfSingleCandidate(i, blockOnlyCells);
+                        eliminatedCount += cleanCellsOfSingleCandidate(i, blockOnlyCells);
                         // if true, pointing pair / triple has potentially been found - if 'i' is present in the intersection more than once,
                         // any occurrence of 'i' in the intersecting line where the cells don't intersect, will be removed
                     } else if (intersectCandidates.contains(i) && lineOnlyCandidates.contains(i) && !blockOnlyCandidates.contains(i)) {
-                        eliminatedCount += cleanHouseOfSingleCandidate(i, lineOnlyCells);
+                        eliminatedCount += cleanCellsOfSingleCandidate(i, lineOnlyCells);
                     }
                 }
                 if (eliminatedCount != 0) {
@@ -563,22 +568,22 @@ public class LogicalAssessor {
         return candidatesEliminated;
     }
 
-    // Helper function for intersectionRemoval used to determine what possible candidates are found in a house
-    // which can be compared against the intersecting house
-    private List<Integer> getCandidatesInHouse(List<Cell> house) {
+    // Helper function for intersectionRemoval used to identify the candidates found in a list of cells,
+    // that can be compared to the cells in an intersecting house/list of cells
+    private List<Integer> getCandidatesInCells(List<Cell> cells) {
         HashSet<Integer> foundCandidates = new HashSet<>();
-        for (Cell cell : house) {
+        for (Cell cell : cells) {
             foundCandidates.addAll(candidatesGrid[cell.row][cell.col]);
         }
         return new ArrayList<>(foundCandidates);
     }
 
-    // Helper function for removing all occurrences of a single candidate from a house
-    private int cleanHouseOfSingleCandidate(int num, List<Cell> house) {
+    // Helper function for removing all occurrences of a single candidate from a list of cells
+    private int cleanCellsOfSingleCandidate(int num, List<Cell> cells) {
         int counter = 0;
-        for (Cell cell : house) {
+        for (Cell cell : cells) {
             if (candidatesGrid[cell.row][cell.col].contains(num)) {
-                candidatesGrid[cell.row][cell.col].remove(num);
+                candidatesGrid[cell.row][cell.col].remove((Integer) num);
                 counter++;
             }
         }
@@ -642,88 +647,23 @@ public class LogicalAssessor {
     };
 
     public static void main(String[] args) {
-//        int[][] sudokuGrid1 = {
-//                {5, 3, 4, 6, 0, 8, 9, 1, 2},
-//                {6, 7, 2, 1, 9, 5, 3, 4, 8},
-//                {1, 9, 8, 3, 4, 2, 5, 6, 7},
-//                {8, 5, 9, 7, 6, 1, 4, 2, 3},
-//                {0, 2, 6, 8, 5, 3, 7, 9, 0},
-//                {7, 1, 3, 9, 2, 4, 8, 5, 6},
-//                {9, 6, 1, 5, 3, 7, 2, 8, 4},
-//                {2, 8, 7, 4, 1, 9, 6, 3, 5},
-//                {3, 4, 5, 2, 0, 6, 1, 7, 9}
-//        };
-//
-//        LogicalAssessor solver = new LogicalAssessor();
-//        solver.solve(sudokuGrid1);
-//        HashMap<String, Integer> sMap = solver.getStrategyMap();
-//        int eliminationCount = sMap.get("Basic Elimination");
-//        System.out.println(eliminationCount);
 
 //        int[][] sudokuGrid1 = {
-//                {0, 2, 8, 0, 0, 7, 0, 0, 0},
-//                {0, 1, 6, 0, 8, 3, 0, 7, 0},
-//                {0, 0, 0, 0, 2, 0, 8, 5, 1},
-//                {1, 3, 7, 2, 9, 0, 0, 0, 0},
-//                {0, 0, 0, 7, 3, 0, 0, 0, 0},
-//                {0, 0, 0, 0, 4, 6, 3, 0, 7},
-//                {2, 9, 0, 0, 7, 0, 0, 0, 0},
-//                {0, 0, 0, 8, 6, 0, 1, 4, 0},
-//                {0, 0, 0, 3, 0, 0, 7, 0, 0}
+//                {0, 1, 7, 9, 0, 3, 6, 0, 0},
+//                {0, 0, 0, 0, 8, 0, 0, 0, 0},
+//                {9, 0, 0, 0, 0, 0, 5, 0, 7},
+//                {0, 7, 2, 0, 1, 0, 4, 3, 0},
+//                {0, 0, 0, 4, 0, 2, 0, 7, 0},
+//                {0, 6, 4, 3, 7, 0, 2, 5, 0},
+//                {7, 0, 1, 0, 0, 0, 0, 6, 5},
+//                {0, 0, 0, 0, 3, 0, 0, 0, 0},
+//                {0, 0, 5, 6, 0, 1, 7, 2, 0}
 //        };
 //
 //        LogicalAssessor solver = new LogicalAssessor();
 //        solver.solve(sudokuGrid1);
 //        HashMap<String, Integer> sMap = solver.getStrategyMap();
-//        int eliminationCount = sMap.get("Hidden Single");
-//        System.out.println(eliminationCount);
-//        solver.printCandidatesGrid();
-
-//        int[][] sudokuGrid1 = {
-//                {4, 0, 0, 0, 0, 0, 9, 3, 8},
-//                {0, 3, 2, 0, 9, 4, 1, 0, 0},
-//                {0, 9, 5, 3, 0, 0, 2, 4, 0},
-//                {3, 7, 0, 6, 0, 9, 0, 0, 4},
-//                {5, 2, 9, 0, 0, 1, 6, 7, 3},
-//                {6, 0, 4, 7, 0, 3, 0, 9, 0},
-//                {9, 5, 7, 0, 0, 8, 3, 0, 0},
-//                {0, 0, 3, 9, 0, 0, 4, 0, 0},
-//                {2, 4, 0, 0, 3, 0, 7, 0, 9}
-//        };
-//
-//        LogicalAssessor solver = new LogicalAssessor();
-//        solver.solve(sudokuGrid1);
-//        HashMap<String, Integer> sMap = solver.getStrategyMap();
-//        int eliminationCount = sMap.get("Naked Pair");
-//        System.out.println(eliminationCount);
-//        GridGenerator gridGen = new GridGenerator();
-//        // validate solved grid by converting candidates grid to int nested array and checking validity
-//        int[][] gridSolved = new int[9][9];
-//        for (int row = 0; row < 9; row++) {
-//            for (int col = 0; col < 9; col++) {
-//                gridSolved[row][col] = solver.candidatesGrid[row][col].get(0);
-//            }
-//        }
-//        System.out.println(Arrays.deepToString(gridSolved).replace("], ", "]\n"));
-//        System.out.println(gridGen.validateGrid(gridSolved));
-//        solver.printCandidatesGrid();
-
-//        int[][] sudokuGrid1 = {
-//                {2, 9, 4, 5, 1, 3, 0, 0, 6},
-//                {6, 0, 0, 8, 4, 2, 3, 1, 9},
-//                {3, 0, 0, 6, 9, 7, 2, 5, 4},
-//                {0, 0, 0, 0, 5, 6, 0, 0, 0},
-//                {0, 4, 0, 0, 8, 0, 0, 6, 0},
-//                {0, 0, 0, 4, 7, 0, 0, 0, 0},
-//                {7, 3, 0, 1, 6, 4, 0, 0, 5},
-//                {9, 0, 0, 7, 3, 5, 0, 0, 1},
-//                {4, 0, 0, 9, 2, 8, 6, 3, 7}
-//        };
-//
-//        LogicalAssessor solver = new LogicalAssessor();
-//        solver.solve(sudokuGrid1);
-//        HashMap<String, Integer> sMap = solver.getStrategyMap();
-//        int eliminationCount = sMap.get("Naked Triple");
+//        int eliminationCount = sMap.get("Intersection");
 //        System.out.println(eliminationCount);
 //        GridGenerator gridGen = new GridGenerator();
 //        int[][] gridSolved = new int[9][9];
@@ -733,56 +673,35 @@ public class LogicalAssessor {
 //            }
 //        }
 //        System.out.println(Arrays.deepToString(gridSolved).replace("], ", "]\n"));
-//        System.out.println("Board validity:");
 //        System.out.println(gridGen.validateGrid(gridSolved));
-//        solver.printCandidatesGrid();
-
-//        int[][] sudokuGrid1 = {
-//                {7, 2, 0, 4, 0, 8, 0, 3, 0},
-//                {0, 8, 0, 0, 0, 0, 0, 4, 7},
-//                {4, 0, 1, 0, 7, 6, 8, 0, 2},
-//                {8, 1, 0, 7, 3, 9, 0, 0, 0},
-//                {0, 0, 0, 8, 5, 1, 0, 0, 0},
-//                {0, 0, 0, 2, 6, 4, 0, 8, 0},
-//                {2, 0, 9, 6, 8, 0, 4, 1, 3},
-//                {3, 4, 0, 0, 0, 0, 0, 0, 8},
-//                {1, 6, 8, 9, 4, 3, 2, 7, 5}
-//        };
-//
-//        LogicalAssessor solver = new LogicalAssessor();
-//        solver.solve(sudokuGrid1);
-//        HashMap<String, Integer> sMap = solver.getStrategyMap();
-//        int eliminationCount = sMap.get("Hidden Pair");
-//        System.out.println(eliminationCount);
 //        solver.printCandidatesGrid();
 
         int[][] sudokuGrid1 = {
-                {0, 0, 0, 0, 0, 1, 0, 3, 0},
-                {2, 3, 1, 0, 9, 0, 0, 0, 0},
-                {0, 6, 5, 0, 0, 3, 1, 0, 0},
-                {6, 7, 8, 9, 2, 4, 3, 0, 0},
-                {1, 0, 3, 0, 5, 0, 0, 0, 6},
-                {0, 0, 0, 1, 3, 6, 7, 0, 0},
-                {0, 0, 9, 3, 6, 0, 5, 7, 0},
-                {0, 0, 6, 0, 1, 9, 8, 4, 3},
-                {3, 0, 0, 0, 0, 0, 0, 0, 0}
+                {0, 1, 6, 0, 0, 7, 8, 0, 3},
+                {0, 9, 0, 8, 0, 0, 0, 0, 0},
+                {8, 7, 0, 0, 0, 1, 0, 6, 0},
+                {0, 4, 8, 0, 0, 0, 3, 0, 0},
+                {6, 5, 0, 0, 0, 9, 0, 8, 2},
+                {0, 3, 9, 0, 0, 0, 6, 5, 0},
+                {0, 6, 0, 9, 0, 0, 0, 2, 0},
+                {0, 8, 0, 0, 0, 2, 9, 3, 6},
+                {9, 2, 4, 6, 0, 0, 5, 1, 0}
         };
 
         LogicalAssessor solver = new LogicalAssessor();
         solver.solve(sudokuGrid1);
         HashMap<String, Integer> sMap = solver.getStrategyMap();
-        int eliminationCount = sMap.get("Hidden Triple");
+        int eliminationCount = sMap.get("Intersection");
         System.out.println(eliminationCount);
         GridGenerator gridGen = new GridGenerator();
-        // validate solved grid by converting candidates grid to int nested array and checking validity
-        int[][] gridSolved = new int[9][9];
-        for (int row = 0; row < 9; row++) {
-            for (int col = 0; col < 9; col++) {
-                gridSolved[row][col] = solver.candidatesGrid[row][col].get(0);
-            }
-        }
-        System.out.println(Arrays.deepToString(gridSolved).replace("], ", "]\n"));
-        System.out.println(gridGen.validateGrid(gridSolved));
+//        int[][] gridSolved = new int[9][9];
+//        for (int row = 0; row < 9; row++) {
+//            for (int col = 0; col < 9; col++) {
+//                gridSolved[row][col] = solver.candidatesGrid[row][col].get(0);
+//            }
+//        }
+//        System.out.println(Arrays.deepToString(gridSolved).replace("], ", "]\n"));
+//        System.out.println(gridGen.validateGrid(gridSolved));
         solver.printCandidatesGrid();
 
     }
