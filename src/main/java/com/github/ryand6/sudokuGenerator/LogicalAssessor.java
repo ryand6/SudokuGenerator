@@ -543,9 +543,9 @@ public class LogicalAssessor {
                 nonIntersectLineCells.removeAll(intersection);
                 List<Cell> lineOnlyCells = new ArrayList<>(nonIntersectLineCells);
 
-                List<Integer> intersectCandidates = getCandidatesInCells(new ArrayList<>(intersection));
-                List<Integer> blockOnlyCandidates = getCandidatesInCells(blockOnlyCells);
-                List<Integer> lineOnlyCandidates = getCandidatesInCells(lineOnlyCells);
+                List<Integer> intersectCandidates = getUniqueCandidatesInCells(new ArrayList<>(intersection));
+                List<Integer> blockOnlyCandidates = getUniqueCandidatesInCells(blockOnlyCells);
+                List<Integer> lineOnlyCandidates = getUniqueCandidatesInCells(lineOnlyCells);
                 int eliminatedCount = 0;
                 for (int i = 1; i < 10; i++) {
                     // if true, box line reduction can potentially be applied - if 'i' is present in the intersection more than once,
@@ -570,7 +570,7 @@ public class LogicalAssessor {
 
     // Helper function for intersectionRemoval used to identify the candidates found in a list of cells,
     // that can be compared to the cells in an intersecting house/list of cells
-    private List<Integer> getCandidatesInCells(List<Cell> cells) {
+    private List<Integer> getUniqueCandidatesInCells(List<Cell> cells) {
         HashSet<Integer> foundCandidates = new HashSet<>();
         for (Cell cell : cells) {
             foundCandidates.addAll(candidatesGrid[cell.row][cell.col]);
@@ -588,6 +588,75 @@ public class LogicalAssessor {
             }
         }
         return counter;
+    }
+
+    /*
+    Strategy 8) X-Wing
+     */
+    private boolean xWing() {
+        strategyMap.putIfAbsent("X-Wing", 0);
+        boolean candidatesEliminated = false;
+        for (int row1 = 0; row1 < 9; row1++) {
+            for (int row2 = row1 + 1; row2 < 9; row2++) {
+                for (int col1 = 0; col1 < 9; col1++) {
+                    for (int col2 = col1 + 1; col2 < 9; col2++) {
+                        HashSet<Cell> rowCells = new HashSet<>(rowHouses.get(row1));
+                        rowCells.addAll(rowHouses.get(row2));
+                        HashSet<Cell> colCells = new HashSet<>(colHouses.get(col1));
+                        colCells.addAll(colHouses.get(col2));
+                        // Get set of cells that intersect the rows and cols
+                        HashSet<Cell> intersection = new HashSet<>(rowCells);
+                        intersection.retainAll(colCells);
+                        // There must be 4 intersecting cells where the horizontal and vertical houses cross
+                        if (intersection.size() != 4) {
+                            continue;
+                        }
+                        // Get cells in the two rows that aren't part of the intersection
+                        HashSet<Cell> rowOnlyCellsSet = new HashSet<>(rowCells);
+                        rowOnlyCellsSet.removeAll(intersection);
+                        List<Cell> rowOnlyCells = new ArrayList<>(rowOnlyCellsSet);
+                        // Get cells in the two cols that aren't part of the intersection
+                        HashSet<Cell> colOnlyCellsSet = new HashSet<>(colCells);
+                        List<Cell> colOnlyCells = new ArrayList<>(colOnlyCellsSet);
+                        rowOnlyCells.removeAll(intersection);
+
+                        // Get list of candidates (including dupes) that are found in each of the lists of cells
+                        List<Integer> intersectCandidates = getUniqueCandidatesInCells(new ArrayList<>(intersection));
+                        List<Integer> rowOnlyCandidates = getUniqueCandidatesInCells(rowOnlyCells);
+                        List<Integer> colOnlyCandidates = getUniqueCandidatesInCells(colOnlyCells);
+
+                        int eliminatedCount = 0;
+                        for (int i = 1; i < 10; i++) {
+                            // Candidate being tested must appear in all 4x intersecting cells
+                            if (Collections.frequency(intersectCandidates, i) != 4) {
+                                continue;
+                            }
+                            // Remove candidate occurrences if they're found in one set of directional lines but not the other
+                            if (rowOnlyCandidates.contains(i) && !colOnlyCandidates.contains(i)) {
+                                eliminatedCount += cleanCellsOfSingleCandidate(i, rowOnlyCells);
+                            } else if (colOnlyCandidates.contains(i) && !rowOnlyCandidates.contains(i)) {
+                                eliminatedCount += cleanCellsOfSingleCandidate(i, colOnlyCells);
+                            }
+                        }
+                        if (eliminatedCount != 0) {
+                            int strategyCount = strategyMap.get("X-Wing");
+                            strategyMap.put("X-Wing", (strategyCount + eliminatedCount));
+                            candidatesEliminated = true;
+                        }
+                    }
+                }
+            }
+        }
+        return candidatesEliminated;
+    }
+
+    // Helper function for xWing to get all candidates in a list of cells, including dupes
+    private List<Integer> getCandidatesInCells(List<Cell> cells) {
+        ArrayList<Integer> foundCandidates = new ArrayList<>();
+        for (Cell cell : cells) {
+            foundCandidates.addAll(candidatesGrid[cell.row][cell.col]);
+        }
+        return foundCandidates;
     }
 
     // Used to attempt to solve the grid using variety of techniques, as well as storing the counts of techniques used
