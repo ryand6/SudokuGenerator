@@ -180,4 +180,25 @@ public class SudokuLogicalStrategyTest {
         assertTrue(eliminationCount > 0);
     }
 
+    @Test
+    public void testXWing() {
+        int[][] sudokuGrid1 = {
+                {1, 0, 0, 0, 0, 0, 5, 6, 9},
+                {4, 9, 2, 0, 5, 6, 1, 0, 8},
+                {0, 5, 6, 1, 0, 9, 2, 4, 0},
+                {0, 0, 9, 6, 4, 0, 8, 0, 1},
+                {0, 6, 4, 0, 1, 0, 0, 0, 0},
+                {2, 1, 8, 0, 3, 5, 6, 0, 4},
+                {0, 4, 0, 5, 0, 0, 0, 1, 6},
+                {9, 0, 5, 0, 6, 1, 4, 0, 2},
+                {6, 2, 1, 0, 0, 0, 0, 0, 5}
+        };
+
+        LogicalAssessor solver = new LogicalAssessor();
+        solver.solve(sudokuGrid1);
+        HashMap<String, Integer> sMap = solver.getStrategyMap();
+        int eliminationCount = sMap.get("X-Wing");
+        assertTrue(eliminationCount > 0);
+    }
+
 }

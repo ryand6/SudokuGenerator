@@ -618,12 +618,12 @@ public class LogicalAssessor {
                         // Get cells in the two cols that aren't part of the intersection
                         HashSet<Cell> colOnlyCellsSet = new HashSet<>(colCells);
                         List<Cell> colOnlyCells = new ArrayList<>(colOnlyCellsSet);
-                        rowOnlyCells.removeAll(intersection);
+                        colOnlyCells.removeAll(intersection);
 
                         // Get list of candidates (including dupes) that are found in each of the lists of cells
-                        List<Integer> intersectCandidates = getUniqueCandidatesInCells(new ArrayList<>(intersection));
-                        List<Integer> rowOnlyCandidates = getUniqueCandidatesInCells(rowOnlyCells);
-                        List<Integer> colOnlyCandidates = getUniqueCandidatesInCells(colOnlyCells);
+                        List<Integer> intersectCandidates = getCandidatesInCells(new ArrayList<>(intersection));
+                        List<Integer> rowOnlyCandidates = getCandidatesInCells(rowOnlyCells);
+                        List<Integer> colOnlyCandidates = getCandidatesInCells(colOnlyCells);
 
                         int eliminatedCount = 0;
                         for (int i = 1; i < 10; i++) {
@@ -674,23 +674,50 @@ public class LogicalAssessor {
         while (unsolvedCells != 0) {
             boolean techniqueSuccessful = false;
             techniqueSuccessful = basicElimination();
+            System.out.println("BASIC ELIMINATION CALLED");
+            printCandidatesGrid();
+            System.out.println();
             if (!techniqueSuccessful) {
                 techniqueSuccessful = hiddenSingle();
+                System.out.println("HIDDEN SINGLE CALLED");
+                printCandidatesGrid();
+                System.out.println();
             }
             if (!techniqueSuccessful) {
                 techniqueSuccessful = nakedPair();
+                System.out.println("NAKED PAIR CALLED");
+                printCandidatesGrid();
+                System.out.println();
             }
             if (!techniqueSuccessful) {
                 techniqueSuccessful = nakedTriple();
+                System.out.println("NAKED TRIPLE CALLED");
+                printCandidatesGrid();
+                System.out.println();
             }
             if (!techniqueSuccessful) {
                 techniqueSuccessful = hiddenPair();
+                System.out.println("HIDDEN PAIR CALLED");
+                printCandidatesGrid();
+                System.out.println();
             }
             if (!techniqueSuccessful) {
                 techniqueSuccessful = hiddenTriple();
+                System.out.println("HIDDEN TRIPLE CALLED");
+                printCandidatesGrid();
+                System.out.println();
             }
             if (!techniqueSuccessful) {
                 techniqueSuccessful = intersectionRemoval();
+                System.out.println("INTERSECTION REMOVAL CALLED");
+                printCandidatesGrid();
+                System.out.println();
+            }
+            if (!techniqueSuccessful) {
+                techniqueSuccessful = xWing();
+                System.out.println("X-WING CALLED");
+                printCandidatesGrid();
+                System.out.println();
             }
             // Exhausted all available techniques with no solution
             if (!techniqueSuccessful) {
@@ -717,60 +744,32 @@ public class LogicalAssessor {
 
     public static void main(String[] args) {
 
-//        int[][] sudokuGrid1 = {
-//                {0, 1, 7, 9, 0, 3, 6, 0, 0},
-//                {0, 0, 0, 0, 8, 0, 0, 0, 0},
-//                {9, 0, 0, 0, 0, 0, 5, 0, 7},
-//                {0, 7, 2, 0, 1, 0, 4, 3, 0},
-//                {0, 0, 0, 4, 0, 2, 0, 7, 0},
-//                {0, 6, 4, 3, 7, 0, 2, 5, 0},
-//                {7, 0, 1, 0, 0, 0, 0, 6, 5},
-//                {0, 0, 0, 0, 3, 0, 0, 0, 0},
-//                {0, 0, 5, 6, 0, 1, 7, 2, 0}
-//        };
-//
-//        LogicalAssessor solver = new LogicalAssessor();
-//        solver.solve(sudokuGrid1);
-//        HashMap<String, Integer> sMap = solver.getStrategyMap();
-//        int eliminationCount = sMap.get("Intersection");
-//        System.out.println(eliminationCount);
-//        GridGenerator gridGen = new GridGenerator();
-//        int[][] gridSolved = new int[9][9];
-//        for (int row = 0; row < 9; row++) {
-//            for (int col = 0; col < 9; col++) {
-//                gridSolved[row][col] = solver.candidatesGrid[row][col].get(0);
-//            }
-//        }
-//        System.out.println(Arrays.deepToString(gridSolved).replace("], ", "]\n"));
-//        System.out.println(gridGen.validateGrid(gridSolved));
-//        solver.printCandidatesGrid();
-
         int[][] sudokuGrid1 = {
-                {0, 1, 6, 0, 0, 7, 8, 0, 3},
-                {0, 9, 0, 8, 0, 0, 0, 0, 0},
-                {8, 7, 0, 0, 0, 1, 0, 6, 0},
-                {0, 4, 8, 0, 0, 0, 3, 0, 0},
-                {6, 5, 0, 0, 0, 9, 0, 8, 2},
-                {0, 3, 9, 0, 0, 0, 6, 5, 0},
-                {0, 6, 0, 9, 0, 0, 0, 2, 0},
-                {0, 8, 0, 0, 0, 2, 9, 3, 6},
-                {9, 2, 4, 6, 0, 0, 5, 1, 0}
+                {1, 0, 0, 0, 0, 0, 5, 6, 9},
+                {4, 9, 2, 0, 5, 6, 1, 0, 8},
+                {0, 5, 6, 1, 0, 9, 2, 4, 0},
+                {0, 0, 9, 6, 4, 0, 8, 0, 1},
+                {0, 6, 4, 0, 1, 0, 0, 0, 0},
+                {2, 1, 8, 0, 3, 5, 6, 0, 4},
+                {0, 4, 0, 5, 0, 0, 0, 1, 6},
+                {9, 0, 5, 0, 6, 1, 4, 0, 2},
+                {6, 2, 1, 0, 0, 0, 0, 0, 5}
         };
 
         LogicalAssessor solver = new LogicalAssessor();
         solver.solve(sudokuGrid1);
         HashMap<String, Integer> sMap = solver.getStrategyMap();
-        int eliminationCount = sMap.get("Intersection");
+        int eliminationCount = sMap.get("X-Wing");
         System.out.println(eliminationCount);
         GridGenerator gridGen = new GridGenerator();
-//        int[][] gridSolved = new int[9][9];
-//        for (int row = 0; row < 9; row++) {
-//            for (int col = 0; col < 9; col++) {
-//                gridSolved[row][col] = solver.candidatesGrid[row][col].get(0);
-//            }
-//        }
-//        System.out.println(Arrays.deepToString(gridSolved).replace("], ", "]\n"));
-//        System.out.println(gridGen.validateGrid(gridSolved));
+        int[][] gridSolved = new int[9][9];
+        for (int row = 0; row < 9; row++) {
+            for (int col = 0; col < 9; col++) {
+                gridSolved[row][col] = solver.candidatesGrid[row][col].get(0);
+            }
+        }
+        System.out.println(Arrays.deepToString(gridSolved).replace("], ", "]\n"));
+        System.out.println(gridGen.validateGrid(gridSolved));
         solver.printCandidatesGrid();
 
     }
