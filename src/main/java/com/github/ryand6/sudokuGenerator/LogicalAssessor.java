@@ -659,6 +659,78 @@ public class LogicalAssessor {
         return foundCandidates;
     }
 
+    /*
+    Strategy 9) Simple Colours
+     */
+    private boolean simpleColours() {
+        strategyMap.putIfAbsent("Simple Colours", 0);
+        boolean candidatesEliminated = false;
+        for (int i = 1; i < 10; i++) {
+            List<HashSet<Cell>> linkedCells = getAllLinkedCells(i);
+            List<List<HashSet<Cell>>> chainsOfLinkedCells = separateIntoChains(linkedCells);
+        }
+        return candidatesEliminated;
+    }
+
+    // Helper function for simpleColours used to return a list of all linked cell pairs
+    private List<HashSet<Cell>> getAllLinkedCells(int num) {
+        List<HashSet<Cell>> linkedCells = new ArrayList<>();
+        for (List<Cell> house : allHouses) {
+            HashSet<Cell> linkedPair = getLinkedPair(num, house);
+            if (linkedPair != null && !linkedCells.contains(linkedPair)) {
+                linkedCells.add(linkedPair);
+            }
+        }
+        return linkedCells;
+    }
+
+    // Helper function used to return a linked pair within a house, if one exists
+    private HashSet<Cell> getLinkedPair(int num, List<Cell> house) {
+        HashSet<Cell> linkedPair = new HashSet<>();
+        int counter = 0;
+        for (Cell cell : house) {
+            if (candidatesGrid[cell.row][cell.col].size() > 1 && candidatesGrid[cell.row][cell.col].contains(num)) {
+                linkedPair.add(cell);
+                counter++;
+            }
+        }
+        if (counter == 2) {
+            return linkedPair;
+        }
+        return null;
+    }
+
+    // Helper function used to separate all cell links into their corresponding link chain
+    private List<List<HashSet<Cell>>> separateIntoChains(List<HashSet<Cell>> linkedCells) {
+        List<List<HashSet<Cell>>> chains = new ArrayList<>();
+        while (!linkedCells.isEmpty()) {
+            List<HashSet<Cell>> chain = new ArrayList<>();
+            chain.add(linkedCells.get(0));
+            linkedCells.remove(0);
+            boolean continueChain = true;
+            while (continueChain) {
+                continueChain = false;
+                for (HashSet<Cell> chainPair : chain) {
+                    // Using iterator so elements can be deleted whilst iterating
+                    Iterator<HashSet<Cell>> iterator = linkedCells.iterator();
+                    while (iterator.hasNext()) {
+                        HashSet<Cell> linkedPair = iterator.next();
+                        List<Cell> pair = linkedPair.stream().toList();
+                        // Check if one of the cells in the link matches one of the cells in the other link, forming a chain
+                        if (chainPair.contains(pair.get(0)) || chainPair.contains(pair.get(1))) {
+                            chain.add(linkedPair);
+                            iterator.remove();
+                            continueChain = true;
+                        }
+                    }
+                }
+            }
+            chains.add(chain);
+        }
+        return chains;
+    }
+
+
     // Used to attempt to solve the grid using variety of techniques, as well as storing the counts of techniques used
     // so a difficulty rating can be defined. Returns a boolean based on whether the grid can be solved using these
     // techniques or not.
