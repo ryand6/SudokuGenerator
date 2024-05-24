@@ -667,7 +667,15 @@ public class LogicalAssessor {
         boolean candidatesEliminated = false;
         for (int i = 1; i < 10; i++) {
             List<HashSet<Cell>> linkedCells = getAllLinkedCells(i);
-            List<List<HashSet<Cell>>> chainsOfLinkedCells = separateIntoChains(linkedCells);
+            List<List<List<Cell>>> chainsOfLinkedCells = separateIntoChains(linkedCells);
+            for (List<List<Cell>> chain : chainsOfLinkedCells) {
+                List<List<Cell>> colourGroups = colourChains(chain);
+                List<Cell> colourGroup1 = colourGroups.get(0);
+                List<Cell> colourGroup2 = colourGroups.get(1);
+                int eliminatedCount = 0;
+                eliminatedCount += twoSameColourInHouse(i, colourGroup1);
+                eliminatedCount += twoSameColourInHouse(i, colourGroup2);
+            }
         }
         return candidatesEliminated;
     }
@@ -701,16 +709,16 @@ public class LogicalAssessor {
     }
 
     // Helper function used to separate all cell links into their corresponding link chain
-    private List<List<HashSet<Cell>>> separateIntoChains(List<HashSet<Cell>> linkedCells) {
-        List<List<HashSet<Cell>>> chains = new ArrayList<>();
+    private List<List<List<Cell>>> separateIntoChains(List<HashSet<Cell>> linkedCells) {
+        List<List<List<Cell>>> chains = new ArrayList<>();
         while (!linkedCells.isEmpty()) {
-            List<HashSet<Cell>> chain = new ArrayList<>();
-            chain.add(linkedCells.get(0));
+            List<List<Cell>> chain = new ArrayList<>();
+            chain.add(linkedCells.get(0).stream().toList());
             linkedCells.remove(0);
             boolean continueChain = true;
             while (continueChain) {
                 continueChain = false;
-                for (HashSet<Cell> chainPair : chain) {
+                for (List<Cell> chainPair : chain) {
                     // Using iterator so elements can be deleted whilst iterating
                     Iterator<HashSet<Cell>> iterator = linkedCells.iterator();
                     while (iterator.hasNext()) {
@@ -718,7 +726,7 @@ public class LogicalAssessor {
                         List<Cell> pair = linkedPair.stream().toList();
                         // Check if one of the cells in the link matches one of the cells in the other link, forming a chain
                         if (chainPair.contains(pair.get(0)) || chainPair.contains(pair.get(1))) {
-                            chain.add(linkedPair);
+                            chain.add(pair);
                             iterator.remove();
                             continueChain = true;
                         }
@@ -730,6 +738,72 @@ public class LogicalAssessor {
         return chains;
     }
 
+    // Used to separate a chain into two colour groups
+    private List<List<Cell>> colourChains(List<List<Cell>> chain) {
+        List<List<Cell>> colourGroups = new ArrayList<>();
+        List<Cell> group1 = new ArrayList<>();
+        List<Cell> group2 = new ArrayList<>();
+        boolean continueDownChain = true;
+        while (continueDownChain) {
+            continueDownChain = false;
+            for (List<Cell> link : chain) {
+                // add first values to colour groups
+                if (group1.isEmpty() && group2.isEmpty()) {
+                    group1.add(link.get(0));
+                    group2.add(link.get(1));
+                    continueDownChain = true;
+                }
+                // logic used to separate cells into colour groups depending on what colour group their linked cell is in
+                if (group1.contains(link.get(0)) && !group2.contains(link.get(1))) {
+                    group2.add(link.get(1));
+                    continueDownChain = true;
+                }
+                if (group1.contains(link.get(1)) && !group2.contains(link.get(0))) {
+                    group2.add(link.get(0));
+                    continueDownChain = true;
+                }
+                if (group2.contains(link.get(0)) && !group1.contains(link.get(1))) {
+                    group1.add(link.get(1));
+                    continueDownChain = true;
+                }
+                if (group2.contains(link.get(1)) && !group1.contains(link.get(0))) {
+                    group1.add(link.get(0));
+                    continueDownChain = true;
+                }
+            }
+        }
+        colourGroups.add(group1);
+        colourGroups.add(group2);
+        return colourGroups;
+    }
+
+    // Used to detect if more than one cell from the same colour group is present in a house, and if so remove the specified candidate from all
+    // cells in the colour group as it cannot be contained in that group
+    private int twoSameColourInHouse(int num, List<Cell> group) {
+        int counter = 0;
+        int candidatesEliminated = 0;
+        for (List<Cell> house : allHouses) {
+            for (Cell cell : house) {
+                if (group.contains(cell) && candidatesGrid[cell.row][cell.col].contains(num)) {
+                    counter++;
+                }
+            }
+        }
+        // if more than 1x cell that contains the specified candidate is present in the colour group for that house, neither cell
+        // in the group can contain that candidate
+        if (counter > 1) {
+            for (Cell cell : group) {
+                candidatesGrid[cell.row][cell.col].remove((Integer) num);
+                candidatesEliminated++;
+            }
+        }
+        return candidatesEliminated;
+    }
+
+    private int candidateSpottedByTwoColours(int num, List<Cell> group1, List<Cell> group2) {
+        int candidatesEliminated = 0;
+        return candidatesEliminated;
+    }
 
     // Used to attempt to solve the grid using variety of techniques, as well as storing the counts of techniques used
     // so a difficulty rating can be defined. Returns a boolean based on whether the grid can be solved using these
