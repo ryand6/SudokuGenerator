@@ -662,7 +662,7 @@ public class LogicalAssessor {
     /*
     Strategy 9) Simple Colours
      */
-    private boolean simpleColours() {
+    private boolean simpleColouring() {
         strategyMap.putIfAbsent("Simple Colouring", 0);
         boolean candidatesEliminated = false;
         for (int i = 1; i < 10; i++) {
@@ -719,25 +719,27 @@ public class LogicalAssessor {
         List<List<List<Cell>>> chains = new ArrayList<>();
         while (!linkedCells.isEmpty()) {
             List<List<Cell>> chain = new ArrayList<>();
-            chain.add(linkedCells.get(0).stream().toList());
+            chain.add(new ArrayList<>(linkedCells.get(0)));
             linkedCells.remove(0);
             boolean continueChain = true;
             while (continueChain) {
                 continueChain = false;
+                List<List<Cell>> chainPairsToAdd = new ArrayList<>();
                 for (List<Cell> chainPair : chain) {
                     // Using iterator so elements can be deleted whilst iterating
                     Iterator<HashSet<Cell>> iterator = linkedCells.iterator();
                     while (iterator.hasNext()) {
                         HashSet<Cell> linkedPair = iterator.next();
-                        List<Cell> pair = linkedPair.stream().toList();
+                        List<Cell> pair = new ArrayList<>(linkedPair);
                         // Check if one of the cells in the link matches one of the cells in the other link, forming a chain
                         if (chainPair.contains(pair.get(0)) || chainPair.contains(pair.get(1))) {
-                            chain.add(pair);
+                            chainPairsToAdd.add(pair);
                             iterator.remove();
                             continueChain = true;
                         }
                     }
                 }
+                chain.addAll(chainPairsToAdd);
             }
             chains.add(chain);
         }
@@ -786,21 +788,22 @@ public class LogicalAssessor {
     // Used to detect if more than one cell from the same colour group is present in a house, and if so remove the specified candidate from all
     // cells in the colour group as it cannot be contained in that group
     private int twoSameColourInHouse(int num, List<Cell> group) {
-        int counter = 0;
         int candidatesEliminated = 0;
         for (List<Cell> house : allHouses) {
+            int counter = 0;
             for (Cell cell : house) {
                 if (group.contains(cell) && candidatesGrid[cell.row][cell.col].contains(num)) {
                     counter++;
                 }
             }
-        }
-        // if more than 1x cell that contains the specified candidate is present in the colour group for that house, neither cell
-        // in the group can contain that candidate
-        if (counter > 1) {
-            for (Cell cell : group) {
-                candidatesGrid[cell.row][cell.col].remove((Integer) num);
-                candidatesEliminated++;
+            // if more than 1x cell that contains the specified candidate is present in the colour group for that house, neither cell
+            // in the group can contain that candidate
+            if (counter > 1) {
+                for (Cell cell : group) {
+                    candidatesGrid[cell.row][cell.col].remove((Integer) num);
+                    candidatesEliminated++;
+                }
+                return candidatesEliminated;
             }
         }
         return candidatesEliminated;
@@ -812,7 +815,7 @@ public class LogicalAssessor {
         for (List<Cell> house : blockHouses) {
             for (Cell cell : house) {
                 // Make sure cell contains the candidate and is not a coloured cell
-                if (candidatesGrid[cell.row][cell.col].contains(num) && !group1.contains(cell) && !group2.contains(cell)) {
+                if (candidatesGrid[cell.row][cell.col].size() > 1 && candidatesGrid[cell.row][cell.col].contains(num) && !group1.contains(cell) && !group2.contains(cell)) {
                     boolean spottedGroup1 = checkCellSpottedByGroup(cell, group1, house);
                     if (!spottedGroup1) {
                         continue;
@@ -901,6 +904,12 @@ public class LogicalAssessor {
                 printCandidatesGrid();
                 System.out.println();
             }
+            if (!techniqueSuccessful) {
+                techniqueSuccessful = simpleColouring();
+                System.out.println("SIMPLE COLOURING CALLED");
+                printCandidatesGrid();
+                System.out.println();
+            }
             // Exhausted all available techniques with no solution
             if (!techniqueSuccessful) {
                 break;
@@ -927,21 +936,21 @@ public class LogicalAssessor {
     public static void main(String[] args) {
 
         int[][] sudokuGrid1 = {
-                {1, 0, 0, 0, 0, 0, 5, 6, 9},
-                {4, 9, 2, 0, 5, 6, 1, 0, 8},
-                {0, 5, 6, 1, 0, 9, 2, 4, 0},
-                {0, 0, 9, 6, 4, 0, 8, 0, 1},
-                {0, 6, 4, 0, 1, 0, 0, 0, 0},
-                {2, 1, 8, 0, 3, 5, 6, 0, 4},
-                {0, 4, 0, 5, 0, 0, 0, 1, 6},
-                {9, 0, 5, 0, 6, 1, 4, 0, 2},
-                {6, 2, 1, 0, 0, 0, 0, 0, 5}
+                {2, 0, 0, 0, 4, 1, 0, 5, 6},
+                {4, 0, 5, 6, 0, 2, 0, 1, 0},
+                {0, 1, 6, 0, 9, 5, 0, 0, 4},
+                {3, 5, 0, 1, 2, 9, 6, 4, 0},
+                {1, 4, 2, 0, 6, 0, 5, 9, 0},
+                {0, 6, 9, 5, 0, 4, 0, 0, 1},
+                {5, 8, 4, 2, 1, 6, 3, 7, 9},
+                {9, 2, 0, 4, 0, 8, 1, 6, 5},
+                {6, 0, 1, 9, 5, 0, 4, 8, 2}
         };
 
         LogicalAssessor solver = new LogicalAssessor();
         solver.solve(sudokuGrid1);
         HashMap<String, Integer> sMap = solver.getStrategyMap();
-        int eliminationCount = sMap.get("X-Wing");
+        int eliminationCount = sMap.get("Simple Colouring");
         System.out.println(eliminationCount);
         GridGenerator gridGen = new GridGenerator();
         int[][] gridSolved = new int[9][9];
