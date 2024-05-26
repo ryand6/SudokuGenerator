@@ -663,7 +663,7 @@ public class LogicalAssessor {
     Strategy 9) Simple Colours
      */
     private boolean simpleColours() {
-        strategyMap.putIfAbsent("Simple Colours", 0);
+        strategyMap.putIfAbsent("Simple Colouring", 0);
         boolean candidatesEliminated = false;
         for (int i = 1; i < 10; i++) {
             List<HashSet<Cell>> linkedCells = getAllLinkedCells(i);
@@ -675,6 +675,12 @@ public class LogicalAssessor {
                 int eliminatedCount = 0;
                 eliminatedCount += twoSameColourInHouse(i, colourGroup1);
                 eliminatedCount += twoSameColourInHouse(i, colourGroup2);
+                eliminatedCount += candidateSpottedByTwoColours(i, colourGroup1, colourGroup2);
+                if (eliminatedCount != 0) {
+                    int strategyCount = strategyMap.get("Simple Colouring");
+                    strategyMap.put("Simple Colouring", (strategyCount + eliminatedCount));
+                    candidatesEliminated = true;
+                }
             }
         }
         return candidatesEliminated;
