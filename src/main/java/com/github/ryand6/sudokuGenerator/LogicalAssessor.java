@@ -800,9 +800,39 @@ public class LogicalAssessor {
         return candidatesEliminated;
     }
 
+    // Used to detect if a non-coloured cell is spotted by a cell from each coloured group, and if so the checked candidate is removed from the non-coloured cell
     private int candidateSpottedByTwoColours(int num, List<Cell> group1, List<Cell> group2) {
         int candidatesEliminated = 0;
+        for (List<Cell> house : blockHouses) {
+            for (Cell cell : house) {
+                // Make sure cell contains the candidate and is not a coloured cell
+                if (candidatesGrid[cell.row][cell.col].contains(num) && !group1.contains(cell) && !group2.contains(cell)) {
+                    boolean spottedGroup1 = checkCellSpottedByGroup(cell, group1, house);
+                    if (!spottedGroup1) {
+                        continue;
+                    }
+                    boolean spottedGroup2 = checkCellSpottedByGroup(cell, group2, house);
+                    if (!spottedGroup2) {
+                        continue;
+                    }
+                    candidatesGrid[cell.row][cell.col].remove((Integer) num);
+                    candidatesEliminated++;
+                }
+            }
+        }
         return candidatesEliminated;
+    }
+
+    // Helper function used to check if a cell can be spotted by another cell that exists in a group
+    private boolean checkCellSpottedByGroup(Cell cell, List<Cell> group, List<Cell> blockHouse) {
+        for (Cell groupCell : group) {
+            // check if cell is in same row, column or block as the coloured cell
+            if (cell.row == groupCell.row || cell.col == groupCell.col || blockHouse.contains(groupCell)) {
+                return true;
+            }
+
+        }
+        return false;
     }
 
     // Used to attempt to solve the grid using variety of techniques, as well as storing the counts of techniques used
