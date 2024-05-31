@@ -844,6 +844,67 @@ public class LogicalAssessor {
         return false;
     }
 
+    /*
+    Strategy 10) Y-Wing
+     */
+    private boolean yWing() {
+        strategyMap.putIfAbsent("Y Wing", 0);
+        boolean candidatesEliminated = false;
+        for (List<Cell> house : allHouses) {
+            for (Cell cell: house) {
+                if (candidatesGrid[cell.row][cell.col].size() == 2) {
+                    int eliminatedCount = eliminateUsingPivot(cell);
+                    if (eliminatedCount != 0) {
+                        int strategyCount = strategyMap.get("Y Wing");
+                        strategyMap.put("Y Wing", (strategyCount + eliminatedCount));
+                        candidatesEliminated = true;
+                    }
+                }
+            }
+        }
+        return candidatesEliminated;
+    }
+
+
+    // Helper function for Y-Wing strategy used to find potential pincer cells based on the pivot, and then remove any candidates seen by two pincers in different houses, where that candidate is present in both pincers
+    private int eliminateUsingPivot(Cell pivot) {
+        int eliminatedCount = 0;
+        int tempEliminatedCount = 0;
+        List<List<Cell>> pivotHouses = new ArrayList<>();
+        // Get all 3x of the houses that the pivot cell can be found in
+        for (List<Cell> house : allHouses) {
+            if (house.contains(pivot)) {
+                pivotHouses.add(house);
+            }
+        }
+        int pincerVal1 = candidatesGrid[pivot.row][pivot.col].get(0);
+        int pincerVal2 = candidatesGrid[pivot.row][pivot.col].get(1);
+        for (int i = 1; i < 10; i++) {
+            // Candidate value to remove must not equal either of the two values in the pivot cell
+            if (i == pincerVal1 || i == pincerVal2) {
+                continue;
+            }
+            List<Cell> pincerGroup1 = new ArrayList<>();
+            List<Cell> pincerGroup2 = new ArrayList<>();
+            for (List<Cell> house : pivotHouses) {
+                for (Cell cell : house) {
+                    if (candidatesGrid[cell.row][cell.col].size() == 2 && candidatesGrid[cell.row][cell.col].contains(i) && candidatesGrid[cell.row][cell.col].contains(pincerVal1)) {
+                        pincerGroup1.add(cell);
+                    }
+                    if (candidatesGrid[cell.row][cell.col].size() == 2 && candidatesGrid[cell.row][cell.col].contains(i) && candidatesGrid[cell.row][cell.col].contains(pincerVal2)) {
+                        pincerGroup2.add(cell);
+                    }
+                }
+            }
+            // Pincer cells must both contain one of the two candidates in the pivot cell, as well as share a candidate not in the pivot cell
+            if (!pincerGroup1.isEmpty() && !pincerGroup2.isEmpty()) {
+                eliminatedCount += candidateSpottedByTwoColours(i, pincerGroup1, pincerGroup2);
+            }
+        }
+        return eliminatedCount;
+    }
+
+
     // Used to attempt to solve the grid using variety of techniques, as well as storing the counts of techniques used
     // so a difficulty rating can be defined. Returns a boolean based on whether the grid can be solved using these
     // techniques or not.
@@ -910,6 +971,12 @@ public class LogicalAssessor {
                 printCandidatesGrid();
                 System.out.println();
             }
+            if (!techniqueSuccessful) {
+                techniqueSuccessful = yWing();
+                System.out.println("Y Wing");
+                printCandidatesGrid();
+                System.out.println();
+            }
             // Exhausted all available techniques with no solution
             if (!techniqueSuccessful) {
                 break;
@@ -935,22 +1002,50 @@ public class LogicalAssessor {
 
     public static void main(String[] args) {
 
+//        int[][] sudokuGrid1 = {
+//                {9, 0, 0, 2, 4, 0, 0, 0, 0},
+//                {0, 5, 0, 6, 9, 0, 2, 3, 1},
+//                {0, 2, 0, 0, 5, 0, 0, 9, 0},
+//                {0, 9, 0, 7, 0, 0, 3, 2, 0},
+//                {0, 0, 2, 9, 3, 5, 6, 0, 7},
+//                {0, 7, 0, 0, 0, 2, 9, 0, 0},
+//                {0, 6, 9, 0, 2, 0, 0, 7, 3},
+//                {5, 1, 0, 0, 7, 9, 0, 6, 2},
+//                {2, 0, 7, 0, 8, 6, 0, 0, 9}
+//        };
+//
+//        LogicalAssessor solver = new LogicalAssessor();
+//        solver.solve(sudokuGrid1);
+//        HashMap<String, Integer> sMap = solver.getStrategyMap();
+//        int eliminationCount = sMap.get("Y Wing");
+//        System.out.println(eliminationCount);
+//        GridGenerator gridGen = new GridGenerator();
+//        int[][] gridSolved = new int[9][9];
+//        for (int row = 0; row < 9; row++) {
+//            for (int col = 0; col < 9; col++) {
+//                gridSolved[row][col] = solver.candidatesGrid[row][col].get(0);
+//            }
+//        }
+//        System.out.println(Arrays.deepToString(gridSolved).replace("], ", "]\n"));
+//        System.out.println(gridGen.validateGrid(gridSolved));
+//        solver.printCandidatesGrid();
+
         int[][] sudokuGrid1 = {
-                {2, 0, 0, 0, 4, 1, 0, 5, 6},
-                {4, 0, 5, 6, 0, 2, 0, 1, 0},
-                {0, 1, 6, 0, 9, 5, 0, 0, 4},
-                {3, 5, 0, 1, 2, 9, 6, 4, 0},
-                {1, 4, 2, 0, 6, 0, 5, 9, 0},
-                {0, 6, 9, 5, 0, 4, 0, 0, 1},
-                {5, 8, 4, 2, 1, 6, 3, 7, 9},
-                {9, 2, 0, 4, 0, 8, 1, 6, 5},
-                {6, 0, 1, 9, 5, 0, 4, 8, 2}
+                {9, 0, 0, 2, 4, 0, 0, 0, 0},
+                {0, 5, 0, 6, 9, 0, 2, 3, 1},
+                {0, 2, 0, 0, 5, 0, 0, 9, 0},
+                {0, 9, 0, 7, 0, 0, 3, 2, 0},
+                {0, 0, 2, 9, 3, 5, 6, 0, 7},
+                {0, 7, 0, 0, 0, 2, 9, 0, 0},
+                {0, 6, 9, 0, 2, 0, 0, 7, 3},
+                {5, 1, 0, 0, 7, 9, 0, 6, 2},
+                {2, 0, 7, 0, 8, 6, 0, 0, 9}
         };
 
         LogicalAssessor solver = new LogicalAssessor();
         solver.solve(sudokuGrid1);
         HashMap<String, Integer> sMap = solver.getStrategyMap();
-        int eliminationCount = sMap.get("Simple Colouring");
+        int eliminationCount = sMap.get("Y Wing");
         System.out.println(eliminationCount);
         GridGenerator gridGen = new GridGenerator();
         int[][] gridSolved = new int[9][9];
