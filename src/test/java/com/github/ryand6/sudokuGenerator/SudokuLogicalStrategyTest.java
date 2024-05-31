@@ -243,4 +243,46 @@ public class SudokuLogicalStrategyTest {
         assertTrue(eliminationCount > 0);
     }
 
+    @Test
+    public void testYWing1() {
+    int[][] sudokuGrid1 = {
+            {9, 0, 0, 2, 4, 0, 0, 0, 0},
+            {0, 5, 0, 6, 9, 0, 2, 3, 1},
+            {0, 2, 0, 0, 5, 0, 0, 9, 0},
+            {0, 9, 0, 7, 0, 0, 3, 2, 0},
+            {0, 0, 2, 9, 3, 5, 6, 0, 7},
+            {0, 7, 0, 0, 0, 2, 9, 0, 0},
+            {0, 6, 9, 0, 2, 0, 0, 7, 3},
+            {5, 1, 0, 0, 7, 9, 0, 6, 2},
+            {2, 0, 7, 0, 8, 6, 0, 0, 9}
+        };
+
+        LogicalAssessor solver = new LogicalAssessor();
+        solver.solve(sudokuGrid1);
+        HashMap<String, Integer> sMap = solver.getStrategyMap();
+        int eliminationCount = sMap.get("Y Wing");
+        assertTrue(eliminationCount > 0);
+    }
+
+    @Test
+    public void testYWing2() {
+        int[][] sudokuGrid1 = {
+                {9, 0, 0, 2, 4, 0, 0, 0, 0},
+                {0, 5, 0, 6, 9, 0, 2, 3, 1},
+                {0, 2, 0, 0, 5, 0, 0, 9, 0},
+                {0, 9, 0, 7, 0, 0, 3, 2, 0},
+                {0, 0, 2, 9, 3, 5, 6, 0, 7},
+                {0, 7, 0, 0, 0, 2, 9, 0, 0},
+                {0, 6, 9, 0, 2, 0, 0, 7, 3},
+                {5, 1, 0, 0, 7, 9, 0, 6, 2},
+                {2, 0, 7, 0, 8, 6, 0, 0, 9}
+        };
+
+        LogicalAssessor solver = new LogicalAssessor();
+        solver.solve(sudokuGrid1);
+        HashMap<String, Integer> sMap = solver.getStrategyMap();
+        int eliminationCount = sMap.get("Y Wing");
+        assertTrue(eliminationCount > 0);
+    }
+
 }
