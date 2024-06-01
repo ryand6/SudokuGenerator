@@ -904,6 +904,86 @@ public class LogicalAssessor {
         return eliminatedCount;
     }
 
+    /*
+    Strategy 11) Swordfish
+     */
+    private boolean swordfish() {
+        strategyMap.putIfAbsent("Swordfish", 0);
+        boolean candidatesEliminated = false;
+        int eliminatedCount = 0;
+        eliminatedCount += findSwordfishCells(rowHouses, "row");
+        eliminatedCount += findSwordfishCells(colHouses, "col");
+        return candidatesEliminated;
+    }
+
+    // Iterate through all the houses on a specified plane to find potential cells for a swordfish pattern. Used to then verify if a swordfish pattern exists,
+    // and if so, remove candidates accordingly before returning the number of candidates eliminated
+    private int findSwordfishCells(List<List<Cell>> housesToCheck, String plane) {
+        int eliminatedCount = 0;
+        List<List<Cell>> potentialHouses = new ArrayList<>();
+        for (int i = 1; i < 10; i++) {
+            for (List<Cell> house : housesToCheck) {
+                List<Cell> potentialHouse = new ArrayList<>();
+                for (Cell cell : house) {
+                    if (candidatesGrid[cell.row][cell.col].size() > 1 && candidatesGrid[cell.row][cell.col].contains(i)) {
+                        potentialHouse.add(cell);
+                    }
+                }
+                if (potentialHouse.size() == 2 || potentialHouse.size() == 3) {
+                    potentialHouses.add(potentialHouse);
+                }
+            }
+            if (potentialHouses.size() >= 3) {
+                List<Cell> validatedCells = verifySwordfishCells(potentialHouses, plane);
+                if (validatedCells == null) {
+                    continue;
+                }
+                eliminatedCount += cleanOppositePlaneOfSwordfishCandidate(validatedCells, plane);
+            }
+        }
+        return eliminatedCount;
+    }
+
+    private List<Cell> verifySwordfishCells(List<List<Cell>> potentialHouses, String plane) {
+        // Iterate through the houses that contain potential swordfish cells, checking three houses at a time to see if their cells combined
+        // exist in only 3x positions within the examined plane
+        for (int i = 0; i < potentialHouses.size(); i++) {
+            for (int j = i + 1; j < potentialHouses.size(); j++) {
+                for (int k = j + 1; k < potentialHouses.size(); k++) {
+                    List<Cell> cellsToCheck = new ArrayList<>();
+                    cellsToCheck.addAll(potentialHouses.get(i));
+                    cellsToCheck.addAll(potentialHouses.get(j));
+                    cellsToCheck.addAll(potentialHouses.get(k));
+                    HashSet<Integer> overlappingPositions = getSetOfPlanePositions(cellsToCheck, plane);
+                    // Swordfish cells verified
+                    if (overlappingPositions.size() == 3) {
+                        return cellsToCheck;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    // Helper function used in the swordfish strategy to clean the opposing plane of houses, containing the swordfish cells, of candidates that exist outside the swordfish cells
+    private int cleanOppositePlaneOfSwordfishCandidate(List<Cell> validatedCells, String plane){
+        int eliminatedCount = 0;
+        return eliminatedCount;
+    }
+
+    // Helper function used in the swordfish strategy to return a set of positions on the specified plane in which each of the potential swordfish cells exists
+    private HashSet<Integer> getSetOfPlanePositions(List<Cell> potentialCellsInHouse, String plane) {
+        HashSet<Integer> positions = new HashSet<>();
+        for (Cell cell : potentialCellsInHouse) {
+            if (plane.equals("row")) {
+                positions.add(cell.row);
+            }
+            else if (plane.equals("col")) {
+                positions.add(cell.col);
+            }
+        }
+        return positions;
+    }
 
     // Used to attempt to solve the grid using variety of techniques, as well as storing the counts of techniques used
     // so a difficulty rating can be defined. Returns a boolean based on whether the grid can be solved using these
@@ -1001,34 +1081,6 @@ public class LogicalAssessor {
     };
 
     public static void main(String[] args) {
-
-//        int[][] sudokuGrid1 = {
-//                {9, 0, 0, 2, 4, 0, 0, 0, 0},
-//                {0, 5, 0, 6, 9, 0, 2, 3, 1},
-//                {0, 2, 0, 0, 5, 0, 0, 9, 0},
-//                {0, 9, 0, 7, 0, 0, 3, 2, 0},
-//                {0, 0, 2, 9, 3, 5, 6, 0, 7},
-//                {0, 7, 0, 0, 0, 2, 9, 0, 0},
-//                {0, 6, 9, 0, 2, 0, 0, 7, 3},
-//                {5, 1, 0, 0, 7, 9, 0, 6, 2},
-//                {2, 0, 7, 0, 8, 6, 0, 0, 9}
-//        };
-//
-//        LogicalAssessor solver = new LogicalAssessor();
-//        solver.solve(sudokuGrid1);
-//        HashMap<String, Integer> sMap = solver.getStrategyMap();
-//        int eliminationCount = sMap.get("Y Wing");
-//        System.out.println(eliminationCount);
-//        GridGenerator gridGen = new GridGenerator();
-//        int[][] gridSolved = new int[9][9];
-//        for (int row = 0; row < 9; row++) {
-//            for (int col = 0; col < 9; col++) {
-//                gridSolved[row][col] = solver.candidatesGrid[row][col].get(0);
-//            }
-//        }
-//        System.out.println(Arrays.deepToString(gridSolved).replace("], ", "]\n"));
-//        System.out.println(gridGen.validateGrid(gridSolved));
-//        solver.printCandidatesGrid();
 
         int[][] sudokuGrid1 = {
                 {9, 0, 0, 2, 4, 0, 0, 0, 0},
