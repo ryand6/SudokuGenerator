@@ -9,7 +9,7 @@ import java.util.*;
  */
 public class LogicalAssessor {
 
-    private int [][] grid;
+    private int[][] grid;
     private List<Integer>[][] candidatesGrid;
     private List<List<Cell>> rowHouses;
     private List<List<Cell>> colHouses;
@@ -23,7 +23,7 @@ public class LogicalAssessor {
         final int row;
         final int col;
 
-        public Cell (int row, int col) {
+        public Cell(int row, int col) {
             this.row = row;
             this.col = col;
         }
@@ -156,15 +156,15 @@ public class LogicalAssessor {
     private boolean basicElimination() {
         strategyMap.putIfAbsent("Basic Elimination", 0);
         boolean candidatesEliminated = false;
-        for (List<Cell> house: allHouses) {
-            for (Cell cell1: house) {
+        for (List<Cell> house : allHouses) {
+            for (Cell cell1 : house) {
                 if (candidatesGrid[cell1.row][cell1.col].size() != 1) {
                     continue;
                 }
                 // Get the only value in the set - this represents the known answer to that cell
                 int val = candidatesGrid[cell1.row][cell1.col].get(0);
                 // For each cell in the house, remove any occurrences of a known value from its list of candidates
-                for (Cell cell2: house) {
+                for (Cell cell2 : house) {
                     if (candidatesGrid[cell2.row][cell2.col].contains(val) && !cell1.equals(cell2)) {
                         // Using wrapper type to remove the value object itself, not the element at index position equal to val
                         candidatesGrid[cell2.row][cell2.col].remove((Integer) val);
@@ -205,7 +205,7 @@ public class LogicalAssessor {
         int count = 0;
         int candidatesEliminated = 0;
         Cell cellToClean = new Cell(-1, -1);
-        for (Cell cell: house) {
+        for (Cell cell : house) {
             if (candidatesGrid[cell.row][cell.col].contains(num)) {
                 count++;
                 cellToClean = cell;
@@ -230,14 +230,14 @@ public class LogicalAssessor {
     private boolean nakedPair() {
         strategyMap.putIfAbsent("Naked Pair", 0);
         boolean candidatesEliminated = false;
-        for (List<Cell> house: allHouses) {
+        for (List<Cell> house : allHouses) {
             for (Cell cell1 : house) {
                 // Only investigate cells that contain a pair of candidates
                 if (candidatesGrid[cell1.row][cell1.col].size() != 2) {
                     continue;
                 }
                 for (Cell cell2 : house) {
-                    if (cell1 == cell2){
+                    if (cell1 == cell2) {
                         continue;
                     }
                     // Clean up rest of cells in house of numbers found in the pair if two cells consist of a matching pair
@@ -261,11 +261,11 @@ public class LogicalAssessor {
     private int cleanHouseOfPairs(List<Cell> house, Cell cell1, Cell cell2) {
         int candidatesEliminated = 0;
         List<Integer> vals = candidatesGrid[cell1.row][cell1.col];
-        for (Cell cell: house) {
+        for (Cell cell : house) {
             if (cell == cell1 || cell == cell2 || candidatesGrid[cell.row][cell.col].size() == 1) {
                 continue;
             }
-            for (int i: vals) {
+            for (int i : vals) {
                 if (candidatesGrid[cell.row][cell.col].contains(i)) {
                     candidatesGrid[cell.row][cell.col].remove((Integer) i);
                     candidatesEliminated++;
@@ -282,7 +282,7 @@ public class LogicalAssessor {
     private boolean nakedTriple() {
         strategyMap.putIfAbsent("Naked Triple", 0);
         boolean candidatesEliminated = false;
-        for (List<Cell> house: allHouses) {
+        for (List<Cell> house : allHouses) {
             for (Cell cell1 : house) {
                 HashSet<Integer> tripleCandidates = new HashSet<>();
                 List<Cell> agreedCells = new ArrayList<>();
@@ -306,13 +306,13 @@ public class LogicalAssessor {
             if (cell2Size != 2 && cell2Size != 3) {
                 continue;
             }
-            if (agreedCells.contains(cell2)){
+            if (agreedCells.contains(cell2)) {
                 continue;
             }
             // Used to store any candidates that don't belong to other members of the agreed cells,
             // so that these can be removed if the currently checked cell isn't part of a valid triple
             List<Integer> uniqueCandidates = new ArrayList<>();
-            for (int candidate: candidatesGrid[cell2.row][cell2.col]) {
+            for (int candidate : candidatesGrid[cell2.row][cell2.col]) {
                 if (!tripleCandidates.contains(candidate)) {
                     uniqueCandidates.add(candidate);
                 }
@@ -345,11 +345,11 @@ public class LogicalAssessor {
     private int cleanHouseOfTriple(List<Cell> house, Cell cell1, Cell cell2, Cell cell3, HashSet<Integer> tripleCandidates) {
         int candidatesEliminated = 0;
         List<Integer> vals = tripleCandidates.stream().toList();
-        for (Cell cell: house) {
+        for (Cell cell : house) {
             if (cell == cell1 || cell == cell2 || cell == cell3 || candidatesGrid[cell.row][cell.col].size() == 1) {
                 continue;
             }
-            for (int i: vals) {
+            for (int i : vals) {
                 if (candidatesGrid[cell.row][cell.col].contains(i)) {
                     candidatesGrid[cell.row][cell.col].remove((Integer) i);
                     candidatesEliminated++;
@@ -394,8 +394,7 @@ public class LogicalAssessor {
             if (candidatesGrid[cell.row][cell.col].contains(num)) {
                 if (potentialPair.size() < 2) {
                     potentialPair.add(cell);
-                }
-                else if (potentialPair.size() == 2) {
+                } else if (potentialPair.size() == 2) {
                     potentialPair.clear();
                     return;
                 }
@@ -441,7 +440,7 @@ public class LogicalAssessor {
     private int cleanCellsOfOtherCandidates(List<Integer> candidates, List<Cell> cellsToClean) {
         int candidatesEliminated = 0;
         for (Cell cell : cellsToClean) {
-            for (Iterator<Integer> iterator = candidatesGrid[cell.row][cell.col].iterator(); iterator.hasNext();) {
+            for (Iterator<Integer> iterator = candidatesGrid[cell.row][cell.col].iterator(); iterator.hasNext(); ) {
                 Integer candidate = iterator.next();
                 if (!candidates.contains(candidate)) {
                     iterator.remove();
@@ -851,7 +850,7 @@ public class LogicalAssessor {
         strategyMap.putIfAbsent("Y Wing", 0);
         boolean candidatesEliminated = false;
         for (List<Cell> house : allHouses) {
-            for (Cell cell: house) {
+            for (Cell cell : house) {
                 if (candidatesGrid[cell.row][cell.col].size() == 2) {
                     int eliminatedCount = eliminateUsingPivot(cell);
                     if (eliminatedCount != 0) {
@@ -913,6 +912,11 @@ public class LogicalAssessor {
         int eliminatedCount = 0;
         eliminatedCount += findSwordfishCells(rowHouses, "row");
         eliminatedCount += findSwordfishCells(colHouses, "col");
+        if (eliminatedCount != 0) {
+            int strategyCount = strategyMap.get("Swordfish");
+            strategyMap.put("Swordfish", (strategyCount + eliminatedCount));
+            candidatesEliminated = true;
+        }
         return candidatesEliminated;
     }
 
@@ -920,8 +924,8 @@ public class LogicalAssessor {
     // and if so, remove candidates accordingly before returning the number of candidates eliminated
     private int findSwordfishCells(List<List<Cell>> housesToCheck, String plane) {
         int eliminatedCount = 0;
-        List<List<Cell>> potentialHouses = new ArrayList<>();
         for (int i = 1; i < 10; i++) {
+            List<List<Cell>> potentialHouses = new ArrayList<>();
             for (List<Cell> house : housesToCheck) {
                 List<Cell> potentialHouse = new ArrayList<>();
                 for (Cell cell : house) {
@@ -929,16 +933,21 @@ public class LogicalAssessor {
                         potentialHouse.add(cell);
                     }
                 }
+                // For a house to be considered in the swordfish pattern, it must have only 2 or 3 cells which contain the candidate being inspected
                 if (potentialHouse.size() == 2 || potentialHouse.size() == 3) {
                     potentialHouses.add(potentialHouse);
                 }
             }
+            // A list of potential houses can only be considered for validation when there are at least 3x houses that fit the criteria of having 2 or 3 cells that contain the candidate
             if (potentialHouses.size() >= 3) {
                 List<Cell> validatedCells = verifySwordfishCells(potentialHouses, plane);
                 if (validatedCells == null) {
                     continue;
                 }
-                eliminatedCount += cleanOppositePlaneOfSwordfishCandidate(validatedCells, plane);
+                System.out.println("POTENTIAL HOUSES FOR CANDIDATE " + i + ":");
+                System.out.println(potentialHouses);
+                System.out.println();
+                eliminatedCount += cleanOppositePlaneOfSwordfishCandidate(i, validatedCells, plane);
             }
         }
         return eliminatedCount;
@@ -965,24 +974,49 @@ public class LogicalAssessor {
         return null;
     }
 
-    // Helper function used in the swordfish strategy to clean the opposing plane of houses, containing the swordfish cells, of candidates that exist outside the swordfish cells
-    private int cleanOppositePlaneOfSwordfishCandidate(List<Cell> validatedCells, String plane){
-        int eliminatedCount = 0;
-        return eliminatedCount;
-    }
-
     // Helper function used in the swordfish strategy to return a set of positions on the specified plane in which each of the potential swordfish cells exists
     private HashSet<Integer> getSetOfPlanePositions(List<Cell> potentialCellsInHouse, String plane) {
         HashSet<Integer> positions = new HashSet<>();
         for (Cell cell : potentialCellsInHouse) {
+            // Make sure that the opposite plane has only 3x positions that align amongst the group of cells
             if (plane.equals("row")) {
-                positions.add(cell.row);
-            }
-            else if (plane.equals("col")) {
                 positions.add(cell.col);
+            } else if (plane.equals("col")) {
+                positions.add(cell.row);
             }
         }
         return positions;
+    }
+
+    // Helper function used in the swordfish strategy to clean the opposing plane of houses, containing the swordfish cells, of candidates that exist outside the swordfish cells
+    private int cleanOppositePlaneOfSwordfishCandidate(int candidate, List<Cell> validatedCells, String plane) {
+        int eliminatedCount = 0;
+        List<List<Cell>> planeHouses = new ArrayList<>();
+        // Iterate over the opposite plane of houses to remove candidates
+        if (plane.equals("row")) {
+            planeHouses = colHouses;
+        } else if (plane.equals("col")) {
+            planeHouses = rowHouses;
+        }
+        HashSet<Cell> validatedCellsSet = new HashSet<>(validatedCells);
+        for (List<Cell> house : planeHouses) {
+            HashSet<Cell> houseSet = new HashSet<>(house);
+            // Check if any of the swordfish cells intersect with the opposite plane houses - those that do can have all non-swordfish cells cleaned
+            houseSet.retainAll(validatedCellsSet);
+            if (houseSet.isEmpty()) {
+                continue;
+            }
+            for (Cell cell : house) {
+                if (validatedCells.contains(cell)) {
+                    continue;
+                }
+                if (candidatesGrid[cell.row][cell.col].contains(candidate)) {
+                    candidatesGrid[cell.row][cell.col].remove((Integer) candidate);
+                    eliminatedCount++;
+                }
+            }
+        }
+        return eliminatedCount;
     }
 
     // Used to attempt to solve the grid using variety of techniques, as well as storing the counts of techniques used
@@ -1057,6 +1091,12 @@ public class LogicalAssessor {
                 printCandidatesGrid();
                 System.out.println();
             }
+            if (!techniqueSuccessful) {
+                techniqueSuccessful = swordfish();
+                System.out.println("Swordfish");
+                printCandidatesGrid();
+                System.out.println();
+            }
             // Exhausted all available techniques with no solution
             if (!techniqueSuccessful) {
                 break;
@@ -1074,30 +1114,34 @@ public class LogicalAssessor {
 
     public HashMap<String, Integer> getStrategyMap() {
         return this.strategyMap;
-    };
+    }
+
+    ;
 
     public void printCandidatesGrid() {
         System.out.println(Arrays.deepToString(candidatesGrid).replace("]], ", "]]\n"));
-    };
+    }
+
+    ;
 
     public static void main(String[] args) {
 
         int[][] sudokuGrid1 = {
-                {9, 0, 0, 2, 4, 0, 0, 0, 0},
-                {0, 5, 0, 6, 9, 0, 2, 3, 1},
-                {0, 2, 0, 0, 5, 0, 0, 9, 0},
-                {0, 9, 0, 7, 0, 0, 3, 2, 0},
-                {0, 0, 2, 9, 3, 5, 6, 0, 7},
-                {0, 7, 0, 0, 0, 2, 9, 0, 0},
-                {0, 6, 9, 0, 2, 0, 0, 7, 3},
-                {5, 1, 0, 0, 7, 9, 0, 6, 2},
-                {2, 0, 7, 0, 8, 6, 0, 0, 9}
+                {0, 2, 0, 0, 4, 3, 0, 6, 9},
+                {0, 0, 3, 8, 9, 6, 2, 0, 0},
+                {9, 6, 0, 0, 2, 5, 0, 3, 0},
+                {8, 9, 0, 5, 6, 0, 0, 1, 3},
+                {6, 0, 0, 0, 3, 0, 0, 0, 0},
+                {0, 3, 0, 0, 8, 1, 0, 2, 6},
+                {3, 0, 0, 0, 1, 0, 0, 7, 0},
+                {0, 0, 9, 6, 7, 4, 3, 0, 2},
+                {2, 7, 0, 3, 5, 8, 0, 9, 0}
         };
 
         LogicalAssessor solver = new LogicalAssessor();
         solver.solve(sudokuGrid1);
         HashMap<String, Integer> sMap = solver.getStrategyMap();
-        int eliminationCount = sMap.get("Y Wing");
+        int eliminationCount = sMap.get("Swordfish");
         System.out.println(eliminationCount);
         GridGenerator gridGen = new GridGenerator();
         int[][] gridSolved = new int[9][9];
@@ -1109,6 +1153,5 @@ public class LogicalAssessor {
         System.out.println(Arrays.deepToString(gridSolved).replace("], ", "]\n"));
         System.out.println(gridGen.validateGrid(gridSolved));
         solver.printCandidatesGrid();
-
     }
 }
