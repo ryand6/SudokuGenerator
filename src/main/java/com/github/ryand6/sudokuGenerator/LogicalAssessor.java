@@ -944,9 +944,6 @@ public class LogicalAssessor {
                 if (validatedCells == null) {
                     continue;
                 }
-                System.out.println("POTENTIAL HOUSES FOR CANDIDATE " + i + ":");
-                System.out.println(potentialHouses);
-                System.out.println();
                 eliminatedCount += cleanOppositePlaneOfSwordfishCandidate(i, validatedCells, plane);
             }
         }
@@ -1034,68 +1031,35 @@ public class LogicalAssessor {
         while (unsolvedCells != 0) {
             boolean techniqueSuccessful = false;
             techniqueSuccessful = basicElimination();
-            System.out.println("BASIC ELIMINATION CALLED");
-            printCandidatesGrid();
-            System.out.println();
             if (!techniqueSuccessful) {
                 techniqueSuccessful = hiddenSingle();
-                System.out.println("HIDDEN SINGLE CALLED");
-                printCandidatesGrid();
-                System.out.println();
             }
             if (!techniqueSuccessful) {
                 techniqueSuccessful = nakedPair();
-                System.out.println("NAKED PAIR CALLED");
-                printCandidatesGrid();
-                System.out.println();
             }
             if (!techniqueSuccessful) {
                 techniqueSuccessful = nakedTriple();
-                System.out.println("NAKED TRIPLE CALLED");
-                printCandidatesGrid();
-                System.out.println();
             }
             if (!techniqueSuccessful) {
                 techniqueSuccessful = hiddenPair();
-                System.out.println("HIDDEN PAIR CALLED");
-                printCandidatesGrid();
-                System.out.println();
             }
             if (!techniqueSuccessful) {
                 techniqueSuccessful = hiddenTriple();
-                System.out.println("HIDDEN TRIPLE CALLED");
-                printCandidatesGrid();
-                System.out.println();
             }
             if (!techniqueSuccessful) {
                 techniqueSuccessful = intersectionRemoval();
-                System.out.println("INTERSECTION REMOVAL CALLED");
-                printCandidatesGrid();
-                System.out.println();
             }
             if (!techniqueSuccessful) {
                 techniqueSuccessful = xWing();
-                System.out.println("X-WING CALLED");
-                printCandidatesGrid();
-                System.out.println();
             }
             if (!techniqueSuccessful) {
                 techniqueSuccessful = simpleColouring();
-                System.out.println("SIMPLE COLOURING CALLED");
-                printCandidatesGrid();
-                System.out.println();
             }
             if (!techniqueSuccessful) {
                 techniqueSuccessful = yWing();
-                System.out.println("Y Wing");
-                printCandidatesGrid();
-                System.out.println();
             }
             if (!techniqueSuccessful) {
                 techniqueSuccessful = swordfish();
-                System.out.println("Swordfish");
-                printCandidatesGrid();
-                System.out.println();
             }
             // Exhausted all available techniques with no solution
             if (!techniqueSuccessful) {
@@ -1107,42 +1071,31 @@ public class LogicalAssessor {
         return false;
     }
 
-    // Determines difficulty rating based on strategies used for solution
-    private void setRating() {
-
-    }
-
     public HashMap<String, Integer> getStrategyMap() {
         return this.strategyMap;
     }
-
-    ;
 
     public void printCandidatesGrid() {
         System.out.println(Arrays.deepToString(candidatesGrid).replace("]], ", "]]\n"));
     }
 
-    ;
-
     public static void main(String[] args) {
 
         int[][] sudokuGrid1 = {
-                {0, 2, 0, 0, 4, 3, 0, 6, 9},
-                {0, 0, 3, 8, 9, 6, 2, 0, 0},
-                {9, 6, 0, 0, 2, 5, 0, 3, 0},
-                {8, 9, 0, 5, 6, 0, 0, 1, 3},
-                {6, 0, 0, 0, 3, 0, 0, 0, 0},
-                {0, 3, 0, 0, 8, 1, 0, 2, 6},
-                {3, 0, 0, 0, 1, 0, 0, 7, 0},
-                {0, 0, 9, 6, 7, 4, 3, 0, 2},
-                {2, 7, 0, 3, 5, 8, 0, 9, 0}
+                {0, 9, 3, 8, 2, 4, 5, 6, 0},
+                {0, 8, 5, 6, 0, 0, 0, 0, 2},
+                {2, 0, 6, 0, 7, 5, 0, 0, 8},
+                {3, 2, 1, 7, 6, 9, 8, 4, 5},
+                {0, 0, 0, 2, 5, 8, 3, 0, 0},
+                {5, 7, 8, 0, 4, 0, 2, 9, 6},
+                {8, 5, 0, 0, 1, 6, 7, 2, 3},
+                {0, 0, 7, 0, 8, 2, 6, 5, 0},
+                {0, 0, 2, 5, 0, 7, 1, 8, 0}
         };
 
         LogicalAssessor solver = new LogicalAssessor();
         solver.solve(sudokuGrid1);
         HashMap<String, Integer> sMap = solver.getStrategyMap();
-        int eliminationCount = sMap.get("Swordfish");
-        System.out.println(eliminationCount);
         GridGenerator gridGen = new GridGenerator();
         int[][] gridSolved = new int[9][9];
         for (int row = 0; row < 9; row++) {
