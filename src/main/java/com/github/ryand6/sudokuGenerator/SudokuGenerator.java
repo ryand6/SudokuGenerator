@@ -4,7 +4,9 @@ import java.util.*;
 
 public class SudokuGenerator {
 
+    // Used in the priority queue, where the higher the priority value, the more likely the board state is to produce a valid puzzle
     private static class BoardState {
+
         private final int[][] board;
         private final int priority;
 
@@ -12,11 +14,9 @@ public class SudokuGenerator {
             this.board = board;
             this.priority = priority;
         }
-
         public int[][] getBoard() {
             return board;
         }
-
         public int getPriority() {
             return priority;
         }
@@ -100,6 +100,7 @@ public class SudokuGenerator {
         return modifiedBoard;
     }
 
+    // Create a copy of a nested array
     private static int[][] copyBoard(int[][] board) {
         int[][] copy = new int[9][9];
         for (int row = 0; row < 9; row++) {
@@ -123,6 +124,7 @@ public class SudokuGenerator {
         return count;
     }
 
+    // Heuristic approach to calculating the likelihood of a board state producing a valid puzzle
     private static int evaluatePriority(int[][] board) {
         int priority = 0;
 
@@ -135,7 +137,8 @@ public class SudokuGenerator {
         };
         for (int[] region : regions) {
             if (board[region[0]][region[1]] == 0) {
-                priority--; // Penalize boards with fewer filled cells in important regions
+                // Penalize boards with fewer filled cells in important regions
+                priority--;
             }
         }
 
@@ -151,6 +154,7 @@ public class SudokuGenerator {
         return priority;
     }
 
+    // Use list of currently developed strategies and whether they were used to solve the solution to determine the difficulty rating of the puzzle
     private static String getDifficultyRating(LogicalAssessor logicalAssessor) {
         HashMap<String, Integer> strategyMap = logicalAssessor.getStrategyMap();
         System.out.println(strategyMap);
