@@ -16,7 +16,6 @@ public class LogicalAssessor {
     private List<List<Cell>> blockHouses;
     private List<List<Cell>> allHouses;
     private HashMap<String, Integer> strategyMap;
-    private String rating;
 
     // Represents cell in Sudoku grid based on its row and col values
     private static class Cell {
@@ -154,7 +153,6 @@ public class LogicalAssessor {
     only 1x possible candidate through this method then the result is that the cell contains a Naked Single
      */
     private boolean basicElimination() {
-        strategyMap.putIfAbsent("Basic Elimination", 0);
         boolean candidatesEliminated = false;
         for (List<Cell> house : allHouses) {
             for (Cell cell1 : house) {
@@ -183,7 +181,6 @@ public class LogicalAssessor {
     and if so removes all other candidates from that cell
      */
     private boolean hiddenSingle() {
-        strategyMap.putIfAbsent("Hidden Single", 0);
         boolean candidatesEliminated = false;
         for (int i = 1; i < 10; i++) {
             for (List<Cell> house : allHouses) {
@@ -228,7 +225,6 @@ public class LogicalAssessor {
     remove those candidates from the other cells in the house if present
      */
     private boolean nakedPair() {
-        strategyMap.putIfAbsent("Naked Pair", 0);
         boolean candidatesEliminated = false;
         for (List<Cell> house : allHouses) {
             for (Cell cell1 : house) {
@@ -280,7 +276,6 @@ public class LogicalAssessor {
     this pattern is discovered, remove the unique candidates from all other cells within the house
      */
     private boolean nakedTriple() {
-        strategyMap.putIfAbsent("Naked Triple", 0);
         boolean candidatesEliminated = false;
         for (List<Cell> house : allHouses) {
             for (Cell cell1 : house) {
@@ -364,7 +359,6 @@ public class LogicalAssessor {
     that are amongst other candidates which as a result can be removed once the pair is found
      */
     private boolean hiddenPair() {
-        strategyMap.putIfAbsent("Hidden Pair", 0);
         boolean candidatesEliminated = false;
         for (List<Cell> house : allHouses) {
             for (int i = 1; i < 10; i++) {
@@ -456,7 +450,6 @@ public class LogicalAssessor {
     Strategy 6)
      */
     private boolean hiddenTriple() {
-        strategyMap.putIfAbsent("Hidden Triple", 0);
         boolean candidatesEliminated = false;
         List<List<Integer>> combinations = generateTriplesCombinations();
         for (List<Cell> house : allHouses) {
@@ -522,7 +515,6 @@ public class LogicalAssessor {
     Strategy 7) Covers both pointing pairs and box line reduction
      */
     private boolean intersectionRemoval() {
-        strategyMap.putIfAbsent("Intersection", 0);
         boolean candidatesEliminated = false;
         List<List<Cell>> lines = new ArrayList<>();
         lines.addAll(rowHouses);
@@ -593,7 +585,6 @@ public class LogicalAssessor {
     Strategy 8) X-Wing
      */
     private boolean xWing() {
-        strategyMap.putIfAbsent("X-Wing", 0);
         boolean candidatesEliminated = false;
         for (int row1 = 0; row1 < 9; row1++) {
             for (int row2 = row1 + 1; row2 < 9; row2++) {
@@ -638,8 +629,8 @@ public class LogicalAssessor {
                             }
                         }
                         if (eliminatedCount != 0) {
-                            int strategyCount = strategyMap.get("X-Wing");
-                            strategyMap.put("X-Wing", (strategyCount + eliminatedCount));
+                            int strategyCount = strategyMap.get("X Wing");
+                            strategyMap.put("X Wing", (strategyCount + eliminatedCount));
                             candidatesEliminated = true;
                         }
                     }
@@ -662,7 +653,6 @@ public class LogicalAssessor {
     Strategy 9) Simple Colours
      */
     private boolean simpleColouring() {
-        strategyMap.putIfAbsent("Simple Colouring", 0);
         boolean candidatesEliminated = false;
         for (int i = 1; i < 10; i++) {
             List<HashSet<Cell>> linkedCells = getAllLinkedCells(i);
@@ -847,7 +837,6 @@ public class LogicalAssessor {
     Strategy 10) Y-Wing
      */
     private boolean yWing() {
-        strategyMap.putIfAbsent("Y Wing", 0);
         boolean candidatesEliminated = false;
         for (List<Cell> house : allHouses) {
             for (Cell cell : house) {
@@ -907,7 +896,6 @@ public class LogicalAssessor {
     Strategy 11) Swordfish
      */
     private boolean swordfish() {
-        strategyMap.putIfAbsent("Swordfish", 0);
         boolean candidatesEliminated = false;
         int eliminatedCount = 0;
         eliminatedCount += findSwordfishCells(rowHouses, "row");
@@ -1024,6 +1012,18 @@ public class LogicalAssessor {
         fillInitialCandidates();
         // Used to store counts for each strategy used
         this.strategyMap = new HashMap<>();
+        strategyMap.put("Basic Elimination", 0);
+        strategyMap.put("Hidden Single", 0);
+        strategyMap.put("Naked Pair", 0);
+        strategyMap.put("Naked Triple", 0);
+        strategyMap.put("Hidden Pair", 0);
+        strategyMap.put("Hidden Triple", 0);
+        strategyMap.put("Intersection", 0);
+        strategyMap.put("X Wing", 0);
+        strategyMap.put("Simple Colouring", 0);
+        strategyMap.put("Y Wing", 0);
+        strategyMap.put("Swordfish", 0);
+
         int unsolvedCells = cellsToSolve();
         // Loop through techniques, returning to the start of the loop when a technique is successful - this is used to try to simulate human
         // order of strategy, returning to the easier techniques first to see if any more solutions can be found before employing more difficult
@@ -1067,8 +1067,7 @@ public class LogicalAssessor {
             }
             unsolvedCells = cellsToSolve();
         }
-
-        return false;
+        return cellsToSolve() == 0;
     }
 
     public HashMap<String, Integer> getStrategyMap() {

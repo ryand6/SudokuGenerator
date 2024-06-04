@@ -197,7 +197,7 @@ public class SudokuLogicalStrategyTest {
         LogicalAssessor solver = new LogicalAssessor();
         solver.solve(sudokuGrid1);
         HashMap<String, Integer> sMap = solver.getStrategyMap();
-        int eliminationCount = sMap.get("X-Wing");
+        int eliminationCount = sMap.get("X Wing");
         assertTrue(eliminationCount > 0);
     }
 
