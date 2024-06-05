@@ -33,6 +33,11 @@ public class GridGenerator implements SudokuValidation, SudokuPrinter {
         Collections.shuffle(colIndices);
         Collections.shuffle(values);
         backtrackingFill();
+        // If 
+        if (!validateGrid(grid)) {
+            System.out.println("Generated grid invalid - re-running process");
+            generateGrid();
+        }
     }
 
     /*

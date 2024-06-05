@@ -1,5 +1,7 @@
 package com.github.ryand6.sudokuGenerator;
 
+import java.io.*;
+import java.math.BigInteger;
 import java.util.*;
 
 public class SudokuGenerator {
@@ -33,12 +35,16 @@ public class SudokuGenerator {
         }
         System.out.println("Final Board: ");
         System.out.println(Arrays.deepToString(modifiedBoard));
-        System.out.println();
         // Initialise class used to solve the board through human strategies to determine a difficulty rating and ensure it can be solved via logic
         LogicalAssessor logicalAssessor = new LogicalAssessor();
         logicalAssessor.solve(modifiedBoard);
         String difficulty = getDifficultyRating(logicalAssessor);
-        System.out.println("Difficulty: " + difficulty);
+        System.out.println("Difficulty: " + difficulty + "\n");
+        if (difficulty == null) {
+            System.out.println("Invalid difficulty setting, board not written to file");
+            return;
+        }
+        writeToFile(sudokuBoard, modifiedBoard, difficulty);
 
     }
 
@@ -55,7 +61,7 @@ public class SudokuGenerator {
         // Initialise class used to solve the board through human strategies to determine a difficulty rating and ensure it can be solved via logic
         LogicalAssessor logicalAssessor = new LogicalAssessor();
 
-        int maxAttempts = 500;
+        int maxAttempts = 100;
         int currentAttempts = 0;
 
         while (cellsToSolve(modifiedBoard) < 81 - numberOfCluesAllowed) {
@@ -171,12 +177,104 @@ public class SudokuGenerator {
         }
     }
 
-    private static void writeToFile() {
+    // Write the completed board, it's puzzle state version, and it's uid to file. The file it's written to depends on the difficulty rating.
+    private static void writeToFile(int[][] completedBoard, int[][] modifiedBoard, String difficulty) {
+        String filePath = null;
+        // File to write to depends on the difficulty of the puzzle
+        switch(difficulty) {
+            case "Easy":
+                filePath = "src/main/resources/easysudoku.tsv";
+                break;
+            case "Medium":
+                filePath = "src/main/resources/mediumsudoku.tsv";
+                break;
+            case "Hard":
+                filePath = "src/main/resources/hardsudoku.tsv";
+                break;
+            case "Extreme":
+                filePath = "src/main/resources/extremesudoku.tsv";
+                break;
+        }
+        if (filePath == null) {
+            System.out.println("No valid difficulty setting provided");
+            return;
+        }
+        File file = new File(filePath);
+        // Create the file if it doesn't currently exist
+        try {
+            if (!file.exists()) {
+                if (file.createNewFile()) {
+                    System.out.println("File created successfully: " + filePath);
+                    // Add headers to the file
+                    try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+                        writer.write("SolvedBoard\tPuzzleBoard\tUid");
+                        writer.newLine();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    } ;
+                } else {
+                    System.out.println("Failed to create the file: " + filePath);
+                    return;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            return; // Exit the program or handle the error as needed
+        }
+        // Get all the uids from the file
+        Set<BigInteger> uids = loadExistingUids(file);
+        BigInteger boardUniqueId = generateUniqueBoardId(modifiedBoard);
+        // Don't add duplicate boards to the file
+        if (uids.contains(boardUniqueId)) {
+            System.out.println("Uid found in file, board not appended to file.");
+            return;
+        }
+        // Store the nested arrays in string form in the file
+        String completedBoardStr = Arrays.deepToString(completedBoard);
+        String modifiedBoardStr = Arrays.deepToString(modifiedBoard);
+        // Used buffered writer in append mode to add the new board state, it's puzzle state, and the uid to the file
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath, true))) {
+            writer.write(completedBoardStr + "\t" + modifiedBoardStr + "\t" + boardUniqueId.toString());
+            writer.newLine();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } ;
 
     }
 
+    // Read all the file's uids into memory
+    private static Set<BigInteger> loadExistingUids(File file) {
+        Set<BigInteger> ids = new HashSet<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            // Skip header
+            String line = reader.readLine();
+            while((line = reader.readLine()) != null) {
+                String[] parts = line.split("\t");
+                if (parts.length == 3) {
+                    ids.add(new BigInteger(parts[2]));
+                }
+            }
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return ids;
+    }
+
+    // Create unique id of the puzzle board used for lookup in the files to ensure no duplicate puzzles are written to file
+    private static BigInteger generateUniqueBoardId(int[][] modifiedBoard) {
+        StringBuilder sb = new StringBuilder();
+        for (int[] row : modifiedBoard) {
+            for (int num : row) {
+                sb.append(num);
+            }
+        }
+        return new BigInteger(sb.toString());
+    }
+
     public static void main(String[] args) {
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 20; i++) {
             SudokuGenerator.generateSudoku();
         }
     }

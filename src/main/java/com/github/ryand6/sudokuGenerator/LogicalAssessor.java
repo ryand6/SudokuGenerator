@@ -1102,7 +1102,7 @@ public class LogicalAssessor {
                 gridSolved[row][col] = solver.candidatesGrid[row][col].get(0);
             }
         }
-        System.out.println(Arrays.deepToString(gridSolved).replace("], ", "]\n"));
+        System.out.println(Arrays.deepToString(gridSolved));
         System.out.println(gridGen.validateGrid(gridSolved));
         solver.printCandidatesGrid();
     }
