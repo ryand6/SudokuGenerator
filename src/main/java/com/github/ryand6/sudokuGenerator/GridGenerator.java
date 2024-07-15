@@ -3,7 +3,6 @@ package com.github.ryand6.sudokuGenerator;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Random;
 
 public class GridGenerator implements SudokuValidation, SudokuPrinter {
 
@@ -24,20 +23,11 @@ public class GridGenerator implements SudokuValidation, SudokuPrinter {
         // reset counter and nested array so that new grid can be generated each time
         count = 0;
         this.grid = new int[9][9];
-        // Randomly set first value on the grid
-        int i = new Random().nextInt(9);
-        int j = new Random().nextInt(9);
-        grid[i][j] = new Random().nextInt(9) + 1;
         // Randomly shuffle row and col indices and values used to attempt to fill cell
         Collections.shuffle(rowIndices);
         Collections.shuffle(colIndices);
         Collections.shuffle(values);
         backtrackingFill();
-        // If 
-        if (!validateGrid(grid)) {
-            System.out.println("Generated grid invalid - re-running process");
-            generateGrid();
-        }
     }
 
     /*

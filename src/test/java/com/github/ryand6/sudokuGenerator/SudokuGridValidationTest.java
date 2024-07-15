@@ -45,9 +45,9 @@ public class SudokuGridValidationTest {
 
     @Test
     public void testMultipleGeneratedGrids() {
-        // Generate 100 random sudoku grids and test their validity
+        // Generate random sudoku grids and test their validity
         GridGenerator gridGen = new GridGenerator();
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 100; i++) {
             gridGen.generateGrid();
             assertTrue(gridGen.validateGrid(gridGen.getGrid()));
         }

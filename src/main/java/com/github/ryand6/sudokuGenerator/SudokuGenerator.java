@@ -32,6 +32,7 @@ public class SudokuGenerator {
         int[][] modifiedBoard = removeClues(sudokuBoard);
         if (modifiedBoard == null) {
             System.out.println("No solution could be found");
+            return;
         }
         System.out.println("Final Board: ");
         System.out.println(Arrays.deepToString(modifiedBoard));
@@ -274,7 +275,7 @@ public class SudokuGenerator {
     }
 
     public static void main(String[] args) {
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < 200; i++) {
             SudokuGenerator.generateSudoku();
         }
     }

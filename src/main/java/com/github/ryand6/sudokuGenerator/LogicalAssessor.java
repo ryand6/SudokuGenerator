@@ -1081,29 +1081,21 @@ public class LogicalAssessor {
     public static void main(String[] args) {
 
         int[][] sudokuGrid1 = {
-                {0, 9, 3, 8, 2, 4, 5, 6, 0},
-                {0, 8, 5, 6, 0, 0, 0, 0, 2},
-                {2, 0, 6, 0, 7, 5, 0, 0, 8},
-                {3, 2, 1, 7, 6, 9, 8, 4, 5},
-                {0, 0, 0, 2, 5, 8, 3, 0, 0},
-                {5, 7, 8, 0, 4, 0, 2, 9, 6},
-                {8, 5, 0, 0, 1, 6, 7, 2, 3},
-                {0, 0, 7, 0, 8, 2, 6, 5, 0},
-                {0, 0, 2, 5, 0, 7, 1, 8, 0}
+                {4, 0, 0, 0, 2, 6, 7, 0, 0},
+                {0, 2, 0, 0, 3, 0, 0, 4, 0},
+                {1, 0, 3, 0, 0, 4, 5, 0, 0},
+                {5, 0, 2, 6, 4, 9, 0, 0, 0},
+                {3, 4, 0, 0, 1, 0, 6, 0, 9},
+                {0, 0, 0, 7, 0, 3, 2, 0, 4},
+                {0, 0, 4, 3, 6, 0, 9, 0, 8},
+                {0, 3, 0, 0, 0, 0, 4, 6, 0},
+                {0, 0, 1, 4, 9, 0, 3, 0, 0}
         };
 
         LogicalAssessor solver = new LogicalAssessor();
         solver.solve(sudokuGrid1);
         HashMap<String, Integer> sMap = solver.getStrategyMap();
-        GridGenerator gridGen = new GridGenerator();
-        int[][] gridSolved = new int[9][9];
-        for (int row = 0; row < 9; row++) {
-            for (int col = 0; col < 9; col++) {
-                gridSolved[row][col] = solver.candidatesGrid[row][col].get(0);
-            }
-        }
-        System.out.println(Arrays.deepToString(gridSolved));
-        System.out.println(gridGen.validateGrid(gridSolved));
         solver.printCandidatesGrid();
+        System.out.println(sMap);
     }
 }
