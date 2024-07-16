@@ -15,7 +15,7 @@ Utility class used to generate unique sudoku problems and save them to file base
 
 Series of strategies employed to solve the board and assess the difficulty rating as follows:
 
-##### Easy
+#### Easy
 
  - Basic Elimination
 
