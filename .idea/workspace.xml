@@ -25,6 +25,9 @@
     <analyzeAfterCompile>true</analyzeAfterCompile>
     <toolWindowToFront>false</toolWindowToFront>
   </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
   <component name="ProjectId" id="2fQJeJxgKnSwXKRxWJSvbCaTrht" />
   <component name="ProjectViewState">
     <option name="abbreviatePackageNames" value="true" />
