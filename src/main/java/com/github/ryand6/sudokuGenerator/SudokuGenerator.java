@@ -2,6 +2,9 @@ package com.github.ryand6.sudokuGenerator;
 
 import java.io.*;
 import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 public class SudokuGenerator {
@@ -24,7 +27,7 @@ public class SudokuGenerator {
         }
     }
 
-    public static void generateSudoku() {
+    public static void generateSudoku(String outputFilePath) {
 
         GridGenerator gridGenerator = new GridGenerator();
         gridGenerator.generateGrid();
@@ -45,7 +48,7 @@ public class SudokuGenerator {
             System.out.println("Invalid difficulty setting, board not written to file");
             return;
         }
-        writeToFile(sudokuBoard, modifiedBoard, difficulty);
+        writeToFile(sudokuBoard, modifiedBoard, difficulty, outputFilePath);
 
     }
 
@@ -179,42 +182,47 @@ public class SudokuGenerator {
     }
 
     // Write the completed board, it's puzzle state version, and it's uid to file. The file it's written to depends on the difficulty rating.
-    private static void writeToFile(int[][] completedBoard, int[][] modifiedBoard, String difficulty) {
-        String filePath = null;
+    private static void writeToFile(int[][] completedBoard, int[][] modifiedBoard, String difficulty, String outputFilePath) {
+        String fileName = null;
         // File to write to depends on the difficulty of the puzzle
         switch(difficulty) {
             case "Easy":
-                filePath = "src/main/resources/easysudoku.tsv";
+                fileName = "easysudoku.tsv";
                 break;
             case "Medium":
-                filePath = "src/main/resources/mediumsudoku.tsv";
+                fileName = "mediumsudoku.tsv";
                 break;
             case "Hard":
-                filePath = "src/main/resources/hardsudoku.tsv";
+                fileName = "hardsudoku.tsv";
                 break;
             case "Extreme":
-                filePath = "src/main/resources/extremesudoku.tsv";
+                fileName = "extremesudoku.tsv";
                 break;
         }
-        if (filePath == null) {
+        if (fileName == null) {
             System.out.println("No valid difficulty setting provided");
             return;
         }
-        File file = new File(filePath);
+        // Set output directory path object
+        Path basePath = Paths.get(outputFilePath);
+        // Get full path object by combining with the output filename
+        Path fullPath = basePath.resolve(fileName);
+        // Create file object using fullPath path object
+        File file = fullPath.toFile();
         // Create the file if it doesn't currently exist
         try {
             if (!file.exists()) {
                 if (file.createNewFile()) {
-                    System.out.println("File created successfully: " + filePath);
+                    System.out.println("File created successfully: " + fullPath);
                     // Add headers to the file
-                    try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+                    try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
                         writer.write("SolvedBoard\tPuzzleBoard\tUid");
                         writer.newLine();
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     } ;
                 } else {
-                    System.out.println("Failed to create the file: " + filePath);
+                    System.out.println("Failed to create the file: " + fullPath);
                     return;
                 }
             }
@@ -234,12 +242,12 @@ public class SudokuGenerator {
         String completedBoardStr = Arrays.deepToString(completedBoard);
         String modifiedBoardStr = Arrays.deepToString(modifiedBoard);
         // Used buffered writer in append mode to add the new board state, it's puzzle state, and the uid to the file
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath, true))) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file, true))) {
             writer.write(completedBoardStr + "\t" + modifiedBoardStr + "\t" + boardUniqueId.toString());
             writer.newLine();
         } catch (IOException e) {
             throw new RuntimeException(e);
-        } ;
+        };
 
     }
 
@@ -275,8 +283,46 @@ public class SudokuGenerator {
     }
 
     public static void main(String[] args) {
-        for (int i = 0; i < 200; i++) {
-            SudokuGenerator.generateSudoku();
+
+        Scanner scanner = new Scanner(System.in);
+        String outputDir = null;
+        boolean isValidPath = false;
+        int iterations = 0;
+
+        while (!isValidPath) {
+            System.out.println("Please enter the output directory where the puzzles will be saved to, or type 'quit' to cancel: ");
+            outputDir = scanner.nextLine();
+            if (outputDir.equals("quit")) {
+                return;
+            }
+            Path path = Paths.get(outputDir);
+            if (!Files.isExecutable(path)) {
+                System.out.println("The specified directory does not exist.");
+                continue;
+            } else {
+                isValidPath = true;
+            }
+        }
+
+        boolean validIterations = false;
+        while (!validIterations) {
+            System.out.println("Please enter number of puzzles to attempt to generate. Note that this may not be the exact number of puzzles created, in case duplicates are found or there are any failures generated the puzzle:");
+            if (scanner.hasNextInt()) {
+                iterations = scanner.nextInt();
+                if (iterations > 0) {
+                    validIterations = true;
+                } else {
+                    System.out.println("Please enter a positive numeric value.");
+                }
+            } else {
+                System.out.println("Invalid input. Please enter a positive numeric value.");
+                // clear the token in the input buffer
+                scanner.next();
+            }
+        }
+
+        for (int i = 0; i < iterations; i++) {
+            SudokuGenerator.generateSudoku(outputDir);
         }
     }
 
