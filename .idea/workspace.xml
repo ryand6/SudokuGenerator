@@ -44,7 +44,8 @@
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/ryand/JavaProjects/SudokuCore&quot;
   }
 }</component>
   <component name="RunManager" selected="Application.com.github.ryand6.sudokuGenerator.SudokuGenerator">

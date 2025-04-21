@@ -1,5 +1,8 @@
 package com.github.ryand6.sudokuGenerator;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.*;
 import java.math.BigInteger;
 import java.nio.file.Files;
@@ -48,7 +51,11 @@ public class SudokuGenerator {
             System.out.println("Invalid difficulty setting, board not written to file");
             return;
         }
-        writeToFile(sudokuBoard, modifiedBoard, difficulty, outputFilePath);
+        try {
+            writeToFile(sudokuBoard, modifiedBoard, difficulty, outputFilePath);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
 
     }
 
@@ -182,7 +189,7 @@ public class SudokuGenerator {
     }
 
     // Write the completed board, it's puzzle state version, and it's uid to file. The file it's written to depends on the difficulty rating.
-    private static void writeToFile(int[][] completedBoard, int[][] modifiedBoard, String difficulty, String outputFilePath) {
+    private static void writeToFile(int[][] completedBoard, int[][] modifiedBoard, String difficulty, String outputFilePath) throws JsonProcessingException {
         String fileName = null;
         // File to write to depends on the difficulty of the puzzle
         switch(difficulty) {
@@ -216,7 +223,7 @@ public class SudokuGenerator {
                     System.out.println("File created successfully: " + fullPath);
                     // Add headers to the file
                     try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-                        writer.write("SolvedBoard\tPuzzleBoard\tUid");
+                        writer.write("PuzzleBoard\tSolvedBoard\tProblemUid\tSolutionUid");
                         writer.newLine();
                     } catch (IOException e) {
                         throw new RuntimeException(e);
@@ -233,17 +240,29 @@ public class SudokuGenerator {
         // Get all the uids from the file
         Set<BigInteger> uids = loadExistingUids(file);
         BigInteger boardUniqueId = generateUniqueBoardId(modifiedBoard);
+
         // Don't add duplicate boards to the file
         if (uids.contains(boardUniqueId)) {
             System.out.println("Uid found in file, board not appended to file.");
             return;
         }
+
+        // Get Uid of completed board
+        BigInteger completedBoardUniqueId = generateUniqueBoardId(completedBoard);
+
+        // Create object mapper object used for serialising nested array to JSON format
+        ObjectMapper mapper = new ObjectMapper();
+
+        String modifiedBoardStr = mapper.writeValueAsString(modifiedBoard);
+        String completedBoardStr = mapper.writeValueAsString(completedBoard);
+
         // Store the nested arrays in string form in the file
-        String completedBoardStr = Arrays.deepToString(completedBoard);
-        String modifiedBoardStr = Arrays.deepToString(modifiedBoard);
+        //String completedBoardStr = Arrays.deepToString(completedBoard);
+        //String modifiedBoardStr = Arrays.deepToString(modifiedBoard);
+
         // Used buffered writer in append mode to add the new board state, it's puzzle state, and the uid to the file
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file, true))) {
-            writer.write(completedBoardStr + "\t" + modifiedBoardStr + "\t" + boardUniqueId.toString());
+            writer.write(modifiedBoardStr + "\t" + completedBoardStr + "\t" + boardUniqueId.toString() + "\t" + completedBoardUniqueId.toString());
             writer.newLine();
         } catch (IOException e) {
             throw new RuntimeException(e);
