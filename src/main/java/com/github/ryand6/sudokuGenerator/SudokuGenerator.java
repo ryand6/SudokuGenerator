@@ -223,7 +223,7 @@ public class SudokuGenerator {
                     System.out.println("File created successfully: " + fullPath);
                     // Add headers to the file
                     try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-                        writer.write("PuzzleBoard\tSolvedBoard\tProblemUid\tSolutionUid");
+                        writer.write("PuzzleBoard\tSolvedBoard");
                         writer.newLine();
                     } catch (IOException e) {
                         throw new RuntimeException(e);
