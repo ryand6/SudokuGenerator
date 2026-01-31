@@ -248,15 +248,15 @@ public class SudokuGenerator {
             return;
         }
 
-        // Get Uid of completed board
-        BigInteger completedBoardUniqueId = generateUniqueBoardId(completedBoard);
+        String initialBoardString = generateBoardString(modifiedBoard);
+        String completedBoardString = generateBoardString(completedBoard);
 
         // Create object mapper object used for serialising nested array to JSON format
         ObjectMapper mapper = new ObjectMapper();
 
         // Used buffered writer in append mode to add the new board state, it's puzzle state, and the uid to the file
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file, true))) {
-            writer.write(boardUniqueId.toString() + "\t" + completedBoardUniqueId.toString());
+            writer.write(initialBoardString + "\t" + completedBoardString);
             writer.newLine();
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -293,6 +293,17 @@ public class SudokuGenerator {
             }
         }
         return new BigInteger(sb.toString());
+    }
+
+    // Create board string representation for writing to file
+    private static String generateBoardString(int[][] board) {
+        StringBuilder sb = new StringBuilder();
+        for (int[] row : board) {
+            for (int num : row) {
+                sb.append(num);
+            }
+        }
+        return sb.toString();
     }
 
     public static void main(String[] args) {
