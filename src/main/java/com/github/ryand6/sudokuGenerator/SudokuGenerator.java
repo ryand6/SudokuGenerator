@@ -237,6 +237,7 @@ public class SudokuGenerator {
             e.printStackTrace();
             return; // Exit the program or handle the error as needed
         }
+
         // Get all the uids from the file
         Set<BigInteger> uids = loadExistingUids(file);
         BigInteger boardUniqueId = generateUniqueBoardId(modifiedBoard);
@@ -253,16 +254,9 @@ public class SudokuGenerator {
         // Create object mapper object used for serialising nested array to JSON format
         ObjectMapper mapper = new ObjectMapper();
 
-        String modifiedBoardStr = mapper.writeValueAsString(modifiedBoard);
-        String completedBoardStr = mapper.writeValueAsString(completedBoard);
-
-        // Store the nested arrays in string form in the file
-        //String completedBoardStr = Arrays.deepToString(completedBoard);
-        //String modifiedBoardStr = Arrays.deepToString(modifiedBoard);
-
         // Used buffered writer in append mode to add the new board state, it's puzzle state, and the uid to the file
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file, true))) {
-            writer.write(modifiedBoardStr + "\t" + completedBoardStr + "\t" + boardUniqueId.toString() + "\t" + completedBoardUniqueId.toString());
+            writer.write(boardUniqueId.toString() + "\t" + completedBoardUniqueId.toString());
             writer.newLine();
         } catch (IOException e) {
             throw new RuntimeException(e);
