@@ -1,10 +1,6 @@
 package com.github.ryand6.sudokuGenerator;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.io.*;
-import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -31,10 +27,9 @@ public class SudokuGenerator {
     }
 
     public static void generateSudoku(String outputFilePath) {
-
         GridGenerator gridGenerator = new GridGenerator();
         gridGenerator.generateGrid();
-        int[][] sudokuBoard = gridGenerator.getGrid();
+        int[][] sudokuBoard = copyBoard(gridGenerator.getGrid());
         int[][] modifiedBoard = removeClues(sudokuBoard);
         if (modifiedBoard == null) {
             System.out.println("No solution could be found");
@@ -51,11 +46,13 @@ public class SudokuGenerator {
             System.out.println("Invalid difficulty setting, board not written to file");
             return;
         }
-        try {
-            writeToFile(sudokuBoard, modifiedBoard, difficulty, outputFilePath);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+        int minCluesAllowed = getMinimumCluesForDifficulty(difficulty);
+        int cluesRemaining = 81 - cellsToSolve(modifiedBoard);
+        if (cluesRemaining < minCluesAllowed) {
+            System.out.println("Clue count " + cluesRemaining + " below minimum of " + minCluesAllowed + " for difficulty " + difficulty + ", discarding puzzle");
+            return;
         }
+        writeToFile(sudokuBoard, modifiedBoard, difficulty, outputFilePath);
 
     }
 
@@ -65,8 +62,7 @@ public class SudokuGenerator {
         PriorityQueue<BoardState> boardQueue = new PriorityQueue<>(Comparator.comparingInt(BoardState::getPriority));
         int[][] modifiedBoard = copyBoard(board);
         // Set the desired number of clues to be left on the generated board
-        int numberOfCluesAllowed = new Random().nextInt(20, 40);
-
+        int numberOfAllowedClues = new Random().nextInt(20, 40);
         // Initialise class used to test whether the board in its current state has a unique solution
         SudokuBacktracker sudokuBacktracker = new SudokuBacktracker();
         // Initialise class used to solve the board through human strategies to determine a difficulty rating and ensure it can be solved via logic
@@ -75,7 +71,7 @@ public class SudokuGenerator {
         int maxAttempts = 100;
         int currentAttempts = 0;
 
-        while (cellsToSolve(modifiedBoard) < 81 - numberOfCluesAllowed) {
+        while (cellsToSolve(modifiedBoard) < 81 - numberOfAllowedClues) {
             currentAttempts++;
             if (currentAttempts > maxAttempts) {
                 System.out.println("Backtracking failed, no solution could be found.");
@@ -189,7 +185,7 @@ public class SudokuGenerator {
     }
 
     // Write the completed board, it's puzzle state version, and it's uid to file. The file it's written to depends on the difficulty rating.
-    private static void writeToFile(int[][] completedBoard, int[][] modifiedBoard, String difficulty, String outputFilePath) throws JsonProcessingException {
+    private static void writeToFile(int[][] completedBoard, int[][] modifiedBoard, String difficulty, String outputFilePath) {
         String fileName = null;
         // File to write to depends on the difficulty of the puzzle
         switch(difficulty) {
@@ -238,21 +234,22 @@ public class SudokuGenerator {
             return; // Exit the program or handle the error as needed
         }
 
-        // Get all the uids from the file
-        Set<BigInteger> uids = loadExistingUids(file);
-        BigInteger boardUniqueId = generateUniqueBoardId(modifiedBoard);
+        Set<String> existingPuzzles = loadExistingUids(file);
 
-        // Don't add duplicate boards to the file
-        if (uids.contains(boardUniqueId)) {
+        String initialBoardString = generateBoardString(modifiedBoard);
+
+        if (existingPuzzles.contains(initialBoardString)) {
             System.out.println("Uid found in file, board not appended to file.");
             return;
         }
 
-        String initialBoardString = generateBoardString(modifiedBoard);
         String completedBoardString = generateBoardString(completedBoard);
 
-        // Create object mapper object used for serialising nested array to JSON format
-        ObjectMapper mapper = new ObjectMapper();
+        // Validate both strings are exactly 81 characters before writing
+        if (initialBoardString.length() != 81 || completedBoardString.length() != 81) {
+            System.out.println("Board string length invalid - puzzle: " + initialBoardString.length() + ", solution: " + completedBoardString.length() + ". Board not written to file.");
+            return;
+        }
 
         // Used buffered writer in append mode to add the new board state, it's puzzle state, and the uid to the file
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file, true))) {
@@ -265,15 +262,15 @@ public class SudokuGenerator {
     }
 
     // Read all the file's uids into memory
-    private static Set<BigInteger> loadExistingUids(File file) {
-        Set<BigInteger> ids = new HashSet<>();
+    private static Set<String> loadExistingUids(File file) {
+        Set<String> ids = new HashSet<>();
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             // Skip header
             String line = reader.readLine();
-            while((line = reader.readLine()) != null) {
+            while ((line = reader.readLine()) != null) {
                 String[] parts = line.split("\t");
-                if (parts.length == 3) {
-                    ids.add(new BigInteger(parts[2]));
+                if (parts.length == 2) {
+                    ids.add(parts[0]);
                 }
             }
         } catch (FileNotFoundException e) {
@@ -284,26 +281,29 @@ public class SudokuGenerator {
         return ids;
     }
 
-    // Create unique id of the puzzle board used for lookup in the files to ensure no duplicate puzzles are written to file
-    private static BigInteger generateUniqueBoardId(int[][] modifiedBoard) {
-        StringBuilder sb = new StringBuilder();
-        for (int[] row : modifiedBoard) {
-            for (int num : row) {
-                sb.append(num);
-            }
-        }
-        return new BigInteger(sb.toString());
-    }
-
     // Create board string representation for writing to file
     private static String generateBoardString(int[][] board) {
         StringBuilder sb = new StringBuilder();
         for (int[] row : board) {
             for (int num : row) {
-                sb.append(num);
+                if (num == 0) {
+                    sb.append('.');
+                } else {
+                    sb.append(num);
+                }
             }
         }
         return sb.toString();
+    }
+
+    private static int getMinimumCluesForDifficulty(String difficulty) {
+        return switch (difficulty) {
+            case "Easy" -> 35;
+            case "Medium" -> 30;
+            case "Hard" -> 25;
+            case "Extreme" -> 20;
+            default -> 0;
+        };
     }
 
     public static void main(String[] args) {
