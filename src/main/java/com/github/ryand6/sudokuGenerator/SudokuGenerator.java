@@ -8,15 +8,22 @@ import java.util.*;
 
 public class SudokuGenerator {
 
+    static final int MIN_CLUES = 25;
+    static final int MAX_CLUES = 39;
+    private static final int MAX_CHECKS = 500;
+    private static final Random RANDOM = new Random();
+
     // Used in the priority queue, where the higher the priority value, the more likely the board state is to produce a valid puzzle
     private static class BoardState {
 
         private final int[][] board;
         private final int priority;
+        private final List<Integer> untriedCells;
 
-        public BoardState(int[][] board, int priority) {
+        public BoardState(int[][] board, int priority, List<Integer> untriedCells) {
             this.board = board;
             this.priority = priority;
+            this.untriedCells = untriedCells;
         }
         public int[][] getBoard() {
             return board;
@@ -24,22 +31,32 @@ public class SudokuGenerator {
         public int getPriority() {
             return priority;
         }
+        public List<Integer> getUntriedCells() {
+            return untriedCells;
+        }
     }
 
     public static void generateSudoku(String outputFilePath) {
         GridGenerator gridGenerator = new GridGenerator();
         gridGenerator.generateGrid();
         int[][] sudokuBoard = copyBoard(gridGenerator.getGrid());
-        int[][] modifiedBoard = removeClues(sudokuBoard);
+        int targetClues = pickTargetClues();
+        int[][] modifiedBoard = removeClues(sudokuBoard, targetClues, MIN_CLUES, RANDOM);
         if (modifiedBoard == null) {
             System.out.println("No solution could be found");
             return;
         }
+        if (!new SudokuBacktracker().isUnique(modifiedBoard)) {
+            System.out.println("Puzzle does not have a unique solution, discarding");
+            return;
+        }
         System.out.println("Final Board: ");
         System.out.println(Arrays.deepToString(modifiedBoard));
-        // Initialise class used to solve the board through human strategies to determine a difficulty rating and ensure it can be solved via logic
         LogicalAssessor logicalAssessor = new LogicalAssessor();
-        logicalAssessor.solve(modifiedBoard);
+        if (!logicalAssessor.solve(modifiedBoard)) {
+            System.out.println("Puzzle cannot be solved using logic alone, discarding");
+            return;
+        }
         String difficulty = getDifficultyRating(logicalAssessor);
         System.out.println("Difficulty: " + difficulty + "\n");
         if (difficulty == null) {
@@ -56,61 +73,75 @@ public class SudokuGenerator {
 
     }
 
-    private static int[][] removeClues(int[][] board) {
+    private static List<Integer> shuffledCellIndices(Random random) {
+        List<Integer> cells = new ArrayList<>();
+        // 41 pairs of cells, with 40 being the centre cell (its own opposite)
+        for (int i = 0; i <= 40; i++) {
+            cells.add(i);
+        }
+        Collections.shuffle(cells, random);
+        return cells;
+    }
+
+    static int pickTargetClues() {
+        return RANDOM.nextInt(MIN_CLUES, MAX_CLUES + 1);
+    }
+
+
+    static int[][] removeClues(int[][] board, int targetClues, int minClues, Random random) {
         // Priority Queue used to hold previous states of modified board in order of priority, calculated using calculatePriority method - this is used so more promising
         // board states can be tried if the current board is at an unsolvable/non-unique dead end
-        PriorityQueue<BoardState> boardQueue = new PriorityQueue<>(Comparator.comparingInt(BoardState::getPriority));
-        int[][] modifiedBoard = copyBoard(board);
-        // Set the desired number of clues to be left on the generated board
-        int numberOfAllowedClues = new Random().nextInt(20, 40);
-        // Initialise class used to test whether the board in its current state has a unique solution
+        PriorityQueue<BoardState> queue = new PriorityQueue<>(Comparator.comparingInt(BoardState::getPriority).reversed());
+        int[][] start = copyBoard(board);
+
         SudokuBacktracker sudokuBacktracker = new SudokuBacktracker();
-        // Initialise class used to solve the board through human strategies to determine a difficulty rating and ensure it can be solved via logic
         LogicalAssessor logicalAssessor = new LogicalAssessor();
 
-        int maxAttempts = 100;
-        int currentAttempts = 0;
+        queue.add(new BoardState(start, evaluatePriority(start), shuffledCellIndices(random)));
 
-        while (cellsToSolve(modifiedBoard) < 81 - numberOfAllowedClues) {
-            currentAttempts++;
-            if (currentAttempts > maxAttempts) {
-                System.out.println("Backtracking failed, no solution could be found.");
-                return null;
+        int checks = 0;
+
+        while (!queue.isEmpty()) {
+            BoardState state = queue.peek();
+
+            if (81 - cellsToSolve(state.getBoard()) <= targetClues) {
+                return copyBoard(state.getBoard());
             }
-            boolean progress = false;
 
-            // Get cell opposite cell coordinates for board symmetry when removing clues
-            int cellToRemoveRow = new Random().nextInt(9);
-            int cellToRemoveCol = new Random().nextInt(9);
-            int opposingCellToRemoveRow = 8 - cellToRemoveRow;
-            int opposingCellToRemoveCol = 8 - cellToRemoveCol;
-
-            // Store clues in case they need to be added back for reasons such as puzzle having more than one solution, or not being able to be solved using the logical assessor
-            int removedClue = modifiedBoard[cellToRemoveRow][cellToRemoveCol];
-            int oppositeRemovedClue = modifiedBoard[opposingCellToRemoveRow][opposingCellToRemoveCol];
-            // Reset loop if the randomly selected cells have already had their clues removed
-            if (modifiedBoard[cellToRemoveRow][cellToRemoveCol] == 0 || modifiedBoard[opposingCellToRemoveRow][opposingCellToRemoveCol] == 0) {
+            if (state.getUntriedCells().isEmpty()) {
+                queue.poll();
                 continue;
             }
-            // Remove clues
-            modifiedBoard[cellToRemoveRow][cellToRemoveCol] = 0;
-            modifiedBoard[opposingCellToRemoveRow][opposingCellToRemoveCol] = 0;
-            // 77 is the maximum number of clues on a board that can still yield a non-unique solution, therefore uniqueness and logic checks not required if the number of cells to solve is less than the number of total cells minus the max number of clues
-            if (cellsToSolve(modifiedBoard) < 4) {
-                progress = true;
+
+            int index = state.getUntriedCells().remove(state.getUntriedCells().size() - 1);
+            int row = index / 9;
+            int col = index % 9;
+            int oppRow = 8 - row;
+            int oppCol = 8 - col;
+
+            int[][] candidate = copyBoard(state.getBoard());
+            if (candidate[row][col] == 0 || candidate[oppRow][oppCol] == 0) {
+                continue;
             }
-            // Add the recently removed clues back to the board and reset the loop if either the puzzle has more than one solution, or it can't be solved by the logical assessor
-            if (sudokuBacktracker.isUnique(modifiedBoard) && logicalAssessor.solve(modifiedBoard)) {
-                progress = true;
+            candidate[row][col] = 0;
+            candidate[oppRow][oppCol] = 0;
+
+            if (81 - cellsToSolve(candidate) < minClues) {
+                continue;
             }
-            if (progress) {
-                BoardState newState = new BoardState(copyBoard(modifiedBoard), evaluatePriority(copyBoard(modifiedBoard)));
-                boardQueue.offer(newState);
-            } else {
-                modifiedBoard = boardQueue.peek().getBoard();
+
+            if (++checks > MAX_CHECKS) {
+                return null;
+            }
+
+            boolean valid = cellsToSolve(candidate) < 4 || (sudokuBacktracker.isUnique(candidate) && logicalAssessor.solve(candidate));
+
+            if (valid) {
+                queue.add(new BoardState(candidate, evaluatePriority(candidate), shuffledCellIndices(random)));
             }
         }
-        return modifiedBoard;
+
+        return null;
     }
 
     // Create a copy of a nested array
@@ -139,33 +170,16 @@ public class SudokuGenerator {
 
     // Heuristic approach to calculating the likelihood of a board state producing a valid puzzle
     private static int evaluatePriority(int[][] board) {
-        int priority = 0;
-
-        priority += cellsToSolve(board); // Higher priority for fewer filled cells
-
-        // Penalize boards with fewer filled cells in certain regions (e.g., corners, center)
-        int[][] regions = {
-                {0, 0}, {0, 8}, {8, 0}, {8, 8}, // corners
-                {4, 4}, {1, 1}, {1, 7}, {7, 1}, {7, 7} // center and near-center cells
-        };
-        for (int[] region : regions) {
-            if (board[region[0]][region[1]] == 0) {
-                // Penalize boards with fewer filled cells in important regions
+        int priority = cellsToSolve(board);
+        int[][] keyCells = { {0,0}, {0,8}, {8,0}, {8,8}, {4,4}, {1,1}, {1,7}, {7,1}, {7,7} };
+        for (int[] c : keyCells) {
+            if (board[c[0]][c[1]] == 0) {
                 priority--;
             }
         }
-
-        // Consider the difficulty of solving the puzzle
-        LogicalAssessor logicalAssessor = new LogicalAssessor();
-        if (logicalAssessor.solve(board)) {
-            // Higher priority for puzzles that are easier to solve
-            priority += 50;
-        } else {
-            // Penalize puzzles that cannot be solved
-            priority -= 100;
-        }
         return priority;
     }
+
 
     // Use list of currently developed strategies and whether they were used to solve the solution to determine the difficulty rating of the puzzle
     private static String getDifficultyRating(LogicalAssessor logicalAssessor) {
@@ -300,8 +314,7 @@ public class SudokuGenerator {
         return switch (difficulty) {
             case "Easy" -> 35;
             case "Medium" -> 30;
-            case "Hard" -> 25;
-            case "Extreme" -> 20;
+            case "Hard", "Extreme" -> 25;
             default -> 0;
         };
     }
